@@ -3191,7 +3191,7 @@ Completion Report: <a href="https://www.citiprogram.org/verify/?k3fcc6f42-7cce-4
 -rw-rw-r--@ 1 luxier  staff    508524623 Jan  5  2023 emar.csv.gz
 -rw-rw-r--@ 1 luxier  staff    471096030 Jan  5  2023 emar_detail.csv.gz
 -rw-rw-r--@ 1 luxier  staff      1767138 Jan  5  2023 hcpcsevents.csv.gz
--rw-r--r--@ 1 luxier  staff  13730083993 Jan 24 14:50 labevents.csv
+-rw-r--r--@ 1 luxier  staff  13730083993 Jan 24 14:53 labevents.csv
 -rw-rw-r--@ 1 luxier  staff   1939088924 Jan  5  2023 labevents.csv.gz
 -rw-rw-r--@ 1 luxier  staff     96698496 Jan  5  2023 microbiologyevents.csv.gz
 -rw-rw-r--@ 1 luxier  staff     36124944 Jan  5  2023 omr.csv.gz
@@ -3403,7 +3403,7 @@ storage</li>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a> </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>-rw-rw-r--@ 1 luxier  staff   1.8G Jan  5  2023 /Users/luxier/desktop/mimic/hosp/labevents.csv.gz
--rw-r--r--@ 1 luxier  staff    13G Jan 24 14:53 /Users/luxier/desktop/mimic/hosp/labevents.csv</code></pre>
+-rw-r--r--@ 1 luxier  staff    13G Jan 24 14:55 /Users/luxier/desktop/mimic/hosp/labevents.csv</code></pre>
 </div>
 </div>
 <p>Storage: Compressed files (*.gz) take up significantly less disk space, which is crucial for big data files. This means lower storage costs and faster data transfers</p>
@@ -3415,14 +3415,14 @@ storage</li>
 <div class="cell-output cell-output-stdout">
 <pre><code> 118171368
 
-real    0m11.519s
-user    0m17.585s
-sys 0m1.353s
+real    0m11.804s
+user    0m18.036s
+sys 0m1.376s
  118171368 /Users/luxier/desktop/mimic/hosp/labevents.csv
 
-real    0m11.624s
-user    0m10.373s
-sys 0m0.964s</code></pre>
+real    0m11.739s
+user    0m10.466s
+sys 0m1.025s</code></pre>
 </div>
 </div>
 <p>Speed: When accessing the data, compressed files require an additional step of decompression, which can take time. The impact on speed depends on the computational resources available and the efficiency of the compression algorithm. In many cases, reading directly from a compressed file (zcat) can be slower than reading from an uncompressed file due to the extra processing required for decompression.</p>
@@ -3508,7 +3508,7 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb40"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Wed Jan 24 14:54:03 PST 2024</code></pre>
+<pre><code>Wed Jan 24 14:55:39 PST 2024</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3532,13 +3532,13 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">uptime</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>14:54  up 1 day, 20:08, 2 users, load averages: 2.63 2.23 1.97</code></pre>
+<pre><code>14:55  up 1 day, 20:09, 2 users, load averages: 3.82 2.72 2.18</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb50"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">who</span> am i</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>luxier                        Jan 24 14:54 </code></pre>
+<pre><code>luxier                        Jan 24 14:55 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3551,10 +3551,10 @@ luxier           ttys001      Jan 24 14:42 </code></pre>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb54"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">w</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>14:54  up 1 day, 20:08, 2 users, load averages: 2.63 2.23 1.97
+<pre><code>14:55  up 1 day, 20:09, 2 users, load averages: 3.82 2.72 2.18
 USER     TTY      FROM              LOGIN@  IDLE WHAT
 luxier   console  -                Mon18   1day  -
-luxier   s001     -                14:42       7 -bash</code></pre>
+luxier   s001     -                14:42       8 -bash</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
