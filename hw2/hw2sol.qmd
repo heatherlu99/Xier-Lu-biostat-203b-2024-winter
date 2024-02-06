@@ -240,7 +240,10 @@ Write a few sentences to explain what is Apache Arrow. Imagine you want to expla
 **Answer:** The time is 0.041s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
 
 Apache Arrow is a cross-language development platform for in-memory data. It specifies a standardized language-independent columnar memory format for flat and hierarchical data, organized for efficient analytic operations on modern hardware. It also provides high-performance data interchange between systems and applications. It is designed to improve the performance of analytical workloads on modern hardware, and to simplify the development of high-performance analytics and machine learning libraries. 
-
+```{bash}
+#| eval: true
+gunzip -k ~/mimic/hosp/labevents.csv.gz
+```
 
 ```{r}
 #| eval: true
