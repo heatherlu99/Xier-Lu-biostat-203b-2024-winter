@@ -241,10 +241,7 @@ Write a few sentences to explain what is Apache Arrow. Imagine you want to expla
 
 Apache Arrow is a cross-language development platform for in-memory data. It specifies a standardized language-independent columnar memory format for flat and hierarchical data, organized for efficient analytic operations on modern hardware. It also provides high-performance data interchange between systems and applications. It is designed to improve the performance of analytical workloads on modern hardware, and to simplify the development of high-performance analytics and machine learning libraries. 
 
-```{bash}
-#| eval: true
-gunzip -k ~/mimic/hosp/labevents.csv.gz
-```
+
 
 ```{r}
 #| eval: true
@@ -257,7 +254,11 @@ system.time({
     dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
 })
 
-
+system.time({
+  labevents_arrow <- arrow::open_dataset("/Users/luxier/Desktop/mimic/hosp/labevents.csv", format = "csv") %>%
+    dplyr::select(subject_id, itemid, charttime, valuenum) %>%
+    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
+})
 nrow(labevents_arrow)
 head(labevents_arrow, 10)
 ```
@@ -278,10 +279,7 @@ Write a few sentences to explain what is the Parquet format. Imagine you want to
 **Answer:** The file size of "labevents.parquet" file is reported as 96 bytes. The time is  0.935 s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
 
 Parquet is a columnar storage format that is optimized for fast retrieval of data. It is designed to be efficient for both read and write operations, and it is particularly well-suited for use with distributed systems. Parquet is a popular choice for storing large datasets, and it is widely used in the big data ecosystem. It is designed to be highly efficient in terms of both storage and processing, and it is well-suited for use with modern hardware and software systems. 
-```{bash}
-#| eval: true
-gunzip -k ~/mimic/hosp/labevents.csv.gz
-```
+
 
 ```{r}
 #| eval: true
@@ -289,7 +287,10 @@ library(readr)
 library(arrow)
 library(dplyr)
 library(data.table)
+
 labevents <- fread("/Users/luxier/desktop/mimic/hosp/labevents.csv")
+
+labevents <- fread("/Users/luxier/Desktop/mimic/hosp/labevents.csv")
 labevents_frame <- as.data.frame(labevents)
 arrow::write_dataset(labevents_frame, "labevents.parquet", format = "parquet")
 file.size("labevents.parquet")
