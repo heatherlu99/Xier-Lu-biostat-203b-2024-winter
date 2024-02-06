@@ -186,8 +186,7 @@ Try to ingest only columns `subject_id`, `itemid`, `charttime`, and `valuenum` i
 #| eval: true
 setwd("/Users/luxier/Desktop/mimic/hosp/")
 system.time({
-  labevents_selected <- read_csv("labevents.csv.gz", 
-                                col_select = c(subject_id, itemid, charttime, valuenum))
+  labevents_selected <- read_csv("labevents.csv.gz", col_select = c(subject_id, itemid, charttime, valuenum))
 })
 
 ```
@@ -213,12 +212,19 @@ In later exercises, we will only be interested in the following lab items: creat
 zcat < ~/desktop/mimic/hosp/labevents.csv.gz | awk -F, 'BEGIN {OFS=","} NR==1 || $5 == 50912 || $5 == 50971 || $5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || $5 == 50931 {print $2, $5, $7, $10}' | gzip > labevents_filtered.csv.gz
 zcat < ~/labevents_filtered.csv.gz | head -10
 zcat < ~/labevents_filtered.csv.gz | wc -l
+=======
+zcat < ~/desktop/mimic/hosp/labevents.csv.gz | awk -F, 'BEGIN {OFS=","} NR==1 || $5 == 50912 || $5 == 50971 || $5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || $5 == 50931 {print $2, $5, $7, $10}' | gzip > ~/desktop/mimic/hosp/labevents_filtered.csv.gz
+zcat < ~/desktop/mimic/hosp/labevents_filtered.csv.gz | head -10
+zcat < ~/desktop/mimic/hosp/labevents_filtered.csv.gz | wc -l
+>>>>>>> develop
 
 ```
 
 ```{r}
 system.time({
   labevents_filtered <- read_csv("labevents_filtered.csv.gz")
+
+  labevents_filtered <- read_csv("/Users/luxier/Desktop/mimic/hosp/labevents_filtered.csv.gz")
 })
 ```
 
@@ -240,7 +246,6 @@ Write a few sentences to explain what is Apache Arrow. Imagine you want to expla
 **Answer:** The time is 0.041s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
 
 Apache Arrow is a cross-language development platform for in-memory data. It specifies a standardized language-independent columnar memory format for flat and hierarchical data, organized for efficient analytic operations on modern hardware. It also provides high-performance data interchange between systems and applications. It is designed to improve the performance of analytical workloads on modern hardware, and to simplify the development of high-performance analytics and machine learning libraries. 
-
 ```{bash}
 #| eval: true
 gunzip -k ~/mimic/hosp/labevents.csv.gz
@@ -257,7 +262,11 @@ system.time({
     dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
 })
 
-
+system.time({
+  labevents_arrow <- arrow::open_dataset("/Users/luxier/Desktop/mimic/hosp/labevents.csv", format = "csv") %>%
+    dplyr::select(subject_id, itemid, charttime, valuenum) %>%
+    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
+})
 nrow(labevents_arrow)
 head(labevents_arrow, 10)
 ```
@@ -278,10 +287,7 @@ Write a few sentences to explain what is the Parquet format. Imagine you want to
 **Answer:** The file size of "labevents.parquet" file is reported as 96 bytes. The time is  0.935 s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
 
 Parquet is a columnar storage format that is optimized for fast retrieval of data. It is designed to be efficient for both read and write operations, and it is particularly well-suited for use with distributed systems. Parquet is a popular choice for storing large datasets, and it is widely used in the big data ecosystem. It is designed to be highly efficient in terms of both storage and processing, and it is well-suited for use with modern hardware and software systems. 
-```{bash}
-#| eval: true
-gunzip -k ~/mimic/hosp/labevents.csv.gz
-```
+
 
 ```{r}
 #| eval: true
@@ -289,6 +295,7 @@ library(readr)
 library(arrow)
 library(dplyr)
 library(data.table)
+
 labevents <- fread("/Users/luxier/desktop/mimic/hosp/labevents.csv")
 labevents_frame <- as.data.frame(labevents)
 arrow::write_dataset(labevents_frame, "labevents.parquet", format = "parquet")
@@ -296,6 +303,14 @@ file.size("labevents.parquet")
 
 system.time({
   labevents.parquet <- arrow::open_dataset("labevents.parquet") %>%
+
+labevents <- fread("/Users/luxier/Desktop/mimic/hosp/labevents.csv")
+labevents_frame <- as.data.frame(labevents)
+arrow::write_dataset(labevents_frame, "/Users/luxier/Desktop/mimic/hosp/labevents.parquet", format = "parquet")
+file.size("/Users/luxier/Desktop/mimic/hosp/labevents.parquet")
+
+system.time({
+  labevents.parquet <- arrow::open_dataset("/Users/luxier/Desktop/mimic/hosp/labevents.parquet") %>%
     dplyr::select(subject_id, itemid, charttime, valuenum) %>%
     dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))%>%
     collect()
@@ -328,7 +343,11 @@ DuckDB is like a powerful, easy-to-use toolbox for working with big data. Imagin
 library(arrow)
 library(duckdb)
 library(dplyr)
+
 labevents_parquet <- arrow::open_dataset("labevents.parquet")
+
+labevents_parquet <- arrow::open_dataset("/Users/luxier/Desktop/mimic/hosp/labevents.parquet")
+
 labevents_duckdb <- arrow::to_duckdb(labevents_parquet)
 
 system.time({
