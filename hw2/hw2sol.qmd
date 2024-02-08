@@ -251,13 +251,17 @@ library(dplyr)
 system.time({
   labevents_arrow <- arrow::open_dataset("/Users/luxier/desktop/mimic/hosp/labevents.csv", format = "csv") %>%
     dplyr::select(subject_id, itemid, charttime, valuenum) %>%
-    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
+    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) %>%
+    collect()
 })
 
 nrow(labevents_arrow)
 head(labevents_arrow, 10)
 ```
-
+```{bash}
+#| eval: true
+ls -lh /Users/luxier/desktop/mimic/hosp/labevents.parquet
+```
 
 ### Q2.5 Compress `labevents.csv` to Parquet format and ingest/select/filter
 
