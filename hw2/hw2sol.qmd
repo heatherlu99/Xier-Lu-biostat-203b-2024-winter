@@ -204,7 +204,7 @@ Our first strategy to handle this big data file is to make a subset of the `labe
 
 In later exercises, we will only be interested in the following lab items: creatinine (50912), potassium (50971), sodium (50983), chloride (50902), bicarbonate (50882), hematocrit (51221), white blood cell count (51301), and glucose (50931) and the following columns: `subject_id`, `itemid`, `charttime`, `valuenum`. Write a Bash command to extract these columns and rows from `labevents.csv.gz` and save the result to a new file `labevents_filtered.csv.gz` in the current working directory. (Hint: use `zcat <` to pipe the output of `labevents.csv.gz` to `awk` and then to `gzip` to compress the output. To save render time, put `#| eval: false` at the beginning of this code chunk.) Display the first 10 lines of the new file `labevents_filtered.csv.gz`. How many lines are in this new file? How long does it take `read_csv` to ingest `labevents_filtered.csv.gz`?
 
-**Answer:** There are 24855910 lines in this new file. The time is 3.732s.
+**Answer:** There are 24855910 lines in this new file.Not including header,There are 24855909 lines in this new file. The time is 3.732s.
 
 
 ```{bash}
@@ -238,7 +238,10 @@ Write a few sentences to explain what is Apache Arrow. Imagine you want to expla
 **Answer:** The time is 0.041s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
 
 Apache Arrow is a cross-language development platform for in-memory data. It specifies a standardized language-independent columnar memory format for flat and hierarchical data, organized for efficient analytic operations on modern hardware. It also provides high-performance data interchange between systems and applications. It is designed to improve the performance of analytical workloads on modern hardware, and to simplify the development of high-performance analytics and machine learning libraries. 
-
+```{bash}
+#| eval: true
+gunzip -k ~/mimic/hosp/labevents.csv.gz
+```
 
 ```{r}
 #| eval: true
@@ -268,7 +271,7 @@ Re-write the csv file `labevents.csv` in the binary Parquet format (Hint: [`arro
 
 Write a few sentences to explain what is the Parquet format. Imagine you want to explain it to a layman in an elevator.
 
-**Answer:** The file size of "labevents.parquet" file is reported as 96 bytes. The time is  0.935 s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
+**Answer:** The file size of "labevents.parquet" file is reported as 1.7G. The time is  0.935 s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
 
 Parquet is a columnar storage format that is optimized for fast retrieval of data. It is designed to be efficient for both read and write operations, and it is particularly well-suited for use with distributed systems. Parquet is a popular choice for storing large datasets, and it is widely used in the big data ecosystem. It is designed to be highly efficient in terms of both storage and processing, and it is well-suited for use with modern hardware and software systems. 
 
@@ -283,20 +286,22 @@ library(data.table)
 labevents <- fread("/Users/luxier/desktop/mimic/hosp/labevents.csv")
 labevents_frame <- as.data.frame(labevents)
 arrow::write_dataset(labevents_frame, "/Users/luxier/desktop/mimic/hosp/labevents.parquet", format = "parquet")
-file.size("/Users/luxier/desktop/mimic/hosp/labevents.parquet")
 
 system.time({
   labevents.parquet <- arrow::open_dataset("/Users/luxier/desktop/mimic/hosp/labevents.parquet") %>%
     dplyr::select(subject_id, itemid, charttime, valuenum) %>%
-    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931))
+    dplyr::filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) %>%
+    collect()
 })
 nrow(labevents.parquet)
-head(labevents.parquet, 10)
-
+print(labevents.parquet %>% head(10))
 
 ```
 
-
+```{bash}
+#| eval: true
+ls -lh /Users/luxier/desktop/mimic/hosp/labevents.parquet
+```
 ### Q2.6 DuckDB
 
 <p align="center">
