@@ -60,11 +60,13 @@ Display the contents of MIMIC `hosp` and `icu` data folders:
 
 
 ```{bash}
-ls -l ~/desktop/mimic/hosp/
+#l eval: true
+ls -l ~/mimic/hosp/
 ```
 
 ```{bash}
-ls -l ~/desktop/mimic/icu/
+#l eval: true
+ls -l ~/mimic/icu/
 ```
 
 
@@ -137,7 +139,8 @@ Let us focus on a bigger file, `labevents.csv.gz`, which is about 125x bigger th
 
 
 ```{bash}
-ls -l ~/desktop/mimic/hosp/labevents.csv.gz
+#l eval: true
+ls -l ~/mimic/hosp/labevents.csv.gz
 ```
 
 
@@ -145,7 +148,8 @@ Display the first 10 lines of this file.
 
 
 ```{bash}
-zcat < ~/desktop/mimic/hosp/labevents.csv.gz | head -10
+#l eval: true
+zcat < ~/mimic/hosp/labevents.csv.gz | head -10
 ```
 
 
@@ -171,8 +175,6 @@ system.time({
     stop("Ingestion aborted after 5 minutes.")
   }
 })
-
-
 ```
 
 
@@ -210,11 +212,15 @@ In later exercises, we will only be interested in the following lab items: creat
 ```{bash}
 #| eval: false
 zcat < ~/desktop/mimic/hosp/labevents.csv.gz | awk -F, 'BEGIN {OFS=","} NR==1 || $5 == 50912 || $5 == 50971 || $5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || $5 == 50931 {print $2, $5, $7, $10}' | gzip > ~/desktop/mimic/hosp/labevents_filtered.csv.gz
-zcat <~/desktop/mimic/hosp/labevents_filtered.csv.gz | head -10
-zcat < ~/desktop/mimic/hosp/labevents_filtered.csv.gz | wc -l
+```
+
+```{bash, eval=T}
+zcat <~/mimic/hosp/labevents_filtered.csv.gz | head -10
+zcat < ~/mimic/hosp/labevents_filtered.csv.gz | wc -l
 ```
 
 ```{r}
+#| eval: true
 system.time({
   labevents_filtered <- read_csv("/Users/luxier/Desktop/mimic/hosp/labevents_filtered.csv.gz")
 })
@@ -238,10 +244,6 @@ Write a few sentences to explain what is Apache Arrow. Imagine you want to expla
 **Answer:** The time is 0.041s. The number of rows is 24855909. The first 10 rows are the same as in Q2.3.
 
 Apache Arrow is a cross-language development platform for in-memory data. It specifies a standardized language-independent columnar memory format for flat and hierarchical data, organized for efficient analytic operations on modern hardware. It also provides high-performance data interchange between systems and applications. It is designed to improve the performance of analytical workloads on modern hardware, and to simplify the development of high-performance analytics and machine learning libraries. 
-```{bash}
-#| eval: true
-gunzip -k ~/mimic/hosp/labevents.csv.gz
-```
 
 ```{r}
 #| eval: true
@@ -258,10 +260,7 @@ system.time({
 nrow(labevents_arrow)
 head(labevents_arrow, 10)
 ```
-```{bash}
-#| eval: true
-ls -lh /Users/luxier/desktop/mimic/hosp/labevents.parquet
-```
+
 
 ### Q2.5 Compress `labevents.csv` to Parquet format and ingest/select/filter
 
@@ -304,7 +303,7 @@ print(labevents.parquet %>% head(10))
 
 ```{bash}
 #| eval: true
-ls -lh /Users/luxier/desktop/mimic/hosp/labevents.parquet
+ls -lh ~/mimic/hosp/labevents.parquet
 ```
 ### Q2.6 DuckDB
 
@@ -350,7 +349,7 @@ head(labevents_duckdb, 10)
 
 
 ```{bash}
-zcat < ~/desktop/mimic/icu/chartevents.csv.gz | head -10
+zcat < ~/mimic/icu/chartevents.csv.gz | head -10
 ```
 
 
@@ -358,7 +357,7 @@ zcat < ~/desktop/mimic/icu/chartevents.csv.gz | head -10
 
 
 ```{bash}
-zcat < ~/desktop/mimic/icu/d_items.csv.gz | head -10
+zcat < ~/mimic/icu/d_items.csv.gz | head -10
 ```
 
 
