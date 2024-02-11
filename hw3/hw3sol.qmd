@@ -61,39 +61,52 @@ library(arrow)
 patients <- read_csv("~/mimic/hosp/patients.csv.gz")
 admissions <- read_csv("~/mimic/hosp/admissions.csv.gz")
 transfers <- read_csv("~/mimic/hosp/transfers.csv.gz")
-labevents <- arrow::read_parquet("labevents_pq")
-list.files("/Users/luxier/Desktop/203hw/hw3/labevents_pq")
 labevents <- arrow::read_parquet("/Users/luxier/Desktop/203hw/hw3/labevents_pq/part-0.parquet")
 procedures_icd <- read_csv("~/mimic/hosp/procedures_icd.csv.gz")
 diagnoses_icd <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz")
 d_icd_procedures <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz")
 d_icd_diagnoses <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
 
-# filter the data
-patient_data <- list(patients, admissions, transfers, labevents, procedures_icd, diagnoses_icd) %>%
-  lapply(function(df) df %>% filter(subject_id == 10013310))
+patient_filter <- filter(patients, subject_id == 10013310)
+admissions_filter <- filter(admissions, subject_id == 10013310)
+transfers_filter <- filter(transfers, subject_id == 10013310)
+labevents_filter <- filter(labevents, subject_id == 10013310)
+procedures_filter <- filter(procedures_icd, subject_id == 10013310)
+diagnoses_filter <- filter(diagnoses_icd, subject_id == 10013310)
 
-patients <- patient_data[[1]]
-admissions <- patient_data[[2]]
-transfers <- patient_data[[3]]
-labevents <- patient_data[[4]]
-procedures_icd <- patient_data[[5]]
-diagnoses_icd <- patient_data[[6]]
+  
+combined_data <- patient_filter %>%
+  left_join(admissions_filter, by = "subject_id") %>%
+  left_join(transfers_filter, by = "subject_id") %>%
+  left_join(labevents_filter, by = "subject_id") %>%
+  left_join(procedures_filter, by = "subject_id") %>%
+  left_join(diagnoses_filter, by = "subject_id")
 
-combined_data <- full_join(admissions, transfers, by = c("subject_id", "hadm_id")) %>%
-  full_join(labevents, by = c("subject_id", "hadm_id")) %>%
-  full_join(procedures_icd, by = c("subject_id", "hadm_id"))
+procedure_names <- left_join(procedures_icd, d_icd_procedures, by = "icd_code")
+top_diagnoses <- diagnoses_icd %>%
+  left_join(d_icd_diagnoses, by = "icd_code") %>%
+  group_by(subject_id, hadm_id) %>%
+  arrange(seq_num) %>%
+  slice_head(n = 3) %>%
+  summarise(subtitle = paste(long_title, collapse = "; ")) %>%
+  ungroup()
+
+combined_data <- left_join(combined_data, top_diagnoses, by = c("subject_id"))
+
+patient_id <- unique(combined_data$subject_id)
+subtitle <- unique(combined_data$subtitle)
 
 ggplot(combined_data, aes(x = calendar_time, y = event_type)) + 
   geom_segment(aes(color = care_unit, size = is_icu_ccu), show.legend = FALSE) +  
-  geom_point(data = combined_data[combined_data$event_type == "Lab", ], shape = 4) +  
-  geom_point(data = combined_data[combined_data$event_type == "Procedure", ], aes(shape = procedure_type)) +  
+  geom_point(data = combined_data %>% filter(event_type == "Lab"), aes(x = calendar_time), shape = 4) +  
+  geom_point(data = combined_data %>% filter(event_type == "Procedure"), aes(x = calendar_time, shape = procedure_type)) +  
   labs(
     title = paste("Patient", patient_id, "ADT History"),
     subtitle = subtitle,
     x = "Calendar Time",
     y = "Event Type"
   ) +
+  scale_shape_manual(values = c("Central venous catheter placement" = 16, "Other incision of brain" = 17, "Spinal tap" = 18)) + 
   theme_minimal()
 
 
@@ -108,6 +121,36 @@ This figure shows the vitals of the patient `10001217` during ICU stays. The x-a
 ![](10001217_icu.png)
 
 Do a similar visualization for the patient `10013310`.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+icustays <- read_csv("~/mimic/icu/icustays.csv.gz")
+vitalsign <- read_csv("~/mimic/icu/chartevents.csv.gz")
+
+vitalsign_filtered <- filter(vitalsign, subject_id == 10013310)
+icustays_filtered <- filter(icustays, subject_id == 10013310)
+combined_data2 <- inner_join(vitalsign_filtered, icustays_filtered, by = c("subject_id", "stay_id"))
+combined_data2$itemid <- as.factor(combined_data2$itemid)
+combined_data2$charttime <- as.POSIXct(combined_data2$charttime, format = "%Y-%m-%d %H:%M:%S")
+
+vital_colors <- c("220045" = "red", "220210" = "green", "220277" = "blue", "224639" = "purple")
+vital_names <- setNames(c("Heart Rate", "Blood Pressure", "Respiratory Rate", "Temperature"), c("220045", "220210", "220277", "224639"))
+
+ggplot(combined_data2, aes(x = charttime, y = valuenum, color = itemid)) + 
+  geom_line() +
+  facet_grid(stay_id ~ .) + 
+  scale_color_manual(values = vital_colors, labels = vital_names) +
+  labs(
+    title = "Patient 10013310 ICU stays - Vitals",
+    x = "Calendar Time",
+    y = "Vital Value",
+    color = "Vital Type"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
 
 ## Q2. ICU stays
 
@@ -118,11 +161,50 @@ zcat < ~/mimic/icu/icustays.csv.gz | head
 
 ### Q2.1 Ingestion
 
-Import `icustays.csv.gz` as a tibble `icustays_tble`. 
+Import `icustays.csv.gz` as a tibble `icustays_tble`.   
+**Answer：**
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+icustays_tble <- read_csv("~/mimic/icu/icustays.csv.gz")
+```
 
 ### Q2.2 Summary and visualization
 
-How many unique `subject_id`? Can a `subject_id` have multiple ICU stays? Summarize the number of ICU stays per `subject_id` by graphs. 
+How many unique `subject_id`? Can a `subject_id` have multiple ICU stays? Summarize the number of ICU stays per `subject_id` by graphs.   
+**Answer：**
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+number_unique_subjects <- icustays_tble %>%
+  summarize(number_of_unique_subjects = n_distinct(subject_id))
+icu_stays_per_subject <- icustays_tble %>%
+  group_by(subject_id) %>%
+  summarize(number_of_icu_stays = n()) %>%
+  ungroup()
+
+ggplot(icu_stays_per_subject, aes(x = number_of_icu_stays)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  labs(
+    title = "Distribution of ICU Stays per Subject",
+    x = "Number of ICU Stays",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+ggplot(icu_stays_per_subject, aes(x = factor(number_of_icu_stays))) +
+  geom_bar(binwidth = 1, fill = "blue", color = "black") +
+  labs(
+    title = "Number of ICU Stays per Subject",
+    x = "Number of ICU Stays",
+    y = "Count of Subjects"
+  ) +
+  theme_minimal()
+```
 
 ## Q3. `admissions` data
 
@@ -134,6 +216,14 @@ zcat < ~/mimic/hosp/admissions.csv.gz | head
 ### Q3.1 Ingestion
 
 Import `admissions.csv.gz` as a tibble `admissions_tble`.
+**Answer：**
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+admissions_tble <- read_csv("~/mimic/hosp/admissions.csv.gz")
+```
 
 ### Q3.2 Summary and visualization
 
@@ -147,6 +237,57 @@ Summarize the following information by graphics and explain any patterns you see
 According to the [MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/about/concepts/#date-shifting), 
 
 > All dates in the database have been shifted to protect patient confidentiality. Dates will be internally consistent for the same patient, but randomly distributed in the future. Dates of birth which occur in the present time are not true dates of birth. Furthermore, dates of birth which occur before the year 1900 occur if the patient is older than 89. In these cases, the patient’s age at their first admission has been fixed to 300.
+
+**Answer：**
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+admissions_tble %>%
+  group_by(subject_id) %>%
+  summarize(number_of_admissions = n()) %>%
+  ggplot(aes(x = number_of_admissions)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  labs(
+    title = "Number of Admissions per Patient",
+    x = "Number of Admissions",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+admissions_tble %>%
+  ggplot(aes(x = hour(admittime))) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  labs(
+    title = "Distribution of Admission Hour",
+    x = "Admission Hour",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+admissions_tble %>%
+  ggplot(aes(x = minute(admittime))) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  labs(
+    title = "Distribution of Admission Minute",
+    x = "Admission Minute",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+admissions_tble %>%
+  mutate(length_of_stay = dischtime - admittime) %>%
+  ggplot(aes(x = length_of_stay)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  labs(
+    title = "Distribution of Length of Stay",
+    x = "Length of Stay",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+```
 
 ## Q4. `patients` data
 
