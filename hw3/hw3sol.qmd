@@ -244,30 +244,41 @@ library(dplyr)
 library(readr)
 library(ggplot2)
 
-admissions_tble %>%
+admissions_per_patient <- admissions_tble %>%
   group_by(subject_id) %>%
   summarize(number_of_admissions = n()) %>%
-  ggplot(aes(x = number_of_admissions)) +
+  ungroup()
+
+admissions_tble <- admissions_tble %>%
+  mutate(admittime = as.POSIXct(admittime, format = "%Y-%m-%d %H:%M:%S"),
+         dischtime = as.POSIXct(dischtime, format = "%Y-%m-%d %H:%M:%S"))
+
+#number of admissions per patient
+ggplot(admissions_per_patient, aes(x = number_of_admissions)) +
   geom_histogram(binwidth = 1, fill = "blue", color = "black") +
   labs(
-    title = "Number of Admissions per Patient",
+    title = "Distribution of Admissions per Patient",
     x = "Number of Admissions",
     y = "Frequency"
   ) +
   theme_minimal()
 
-admissions_tble %>%
-  ggplot(aes(x = hour(admittime))) +
-  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-  labs(
-    title = "Distribution of Admission Hour",
-    x = "Admission Hour",
-    y = "Frequency"
-  ) +
-  theme_minimal()
+#admission hour
+admissions_tble <- admissions_tble %>%
+  mutate(admittime_hour = hour(admittime))
 
-admissions_tble %>%
-  ggplot(aes(x = minute(admittime))) +
+admission_hour <- admissions_tble %>%
+  summarize(min_admission_hour = min(admittime_hour), max_admission_hour = max(admittime_hour))
+
+ggplot(admissions_tble, aes(x = admittime_hour)) +
+  geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+  labs(title = "Distribution of Admission Hours", x = "Hour of Admission", y = "Count")
+
+#admission minute
+admissions_tble <- admissions_tble %>%
+  mutate(admittime_minute = minute(admittime))
+
+ggplot(admissions_tble, aes(x = admittime_minute)) +
   geom_histogram(binwidth = 1, fill = "blue", color = "black") +
   labs(
     title = "Distribution of Admission Minute",
@@ -276,9 +287,13 @@ admissions_tble %>%
   ) +
   theme_minimal()
 
-admissions_tble %>%
-  mutate(length_of_stay = dischtime - admittime) %>%
-  ggplot(aes(x = length_of_stay)) +
+#length of hospital stay
+admissions_tble <- admissions_tble %>%
+  mutate(
+    length_of_stay = as.numeric(dischtime - admittime, units = "days")
+  )
+
+ggplot(admissions_tble, aes(x = length_of_stay)) +
   geom_histogram(binwidth = 1, fill = "blue", color = "black") +
   labs(
     title = "Distribution of Length of Stay",
@@ -286,7 +301,6 @@ admissions_tble %>%
     y = "Frequency"
   ) +
   theme_minimal()
-
 ```
 
 ## Q4. `patients` data
