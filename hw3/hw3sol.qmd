@@ -393,29 +393,31 @@ d_labitems <- read_csv("~/mimic/hosp/d_labitems.csv.gz")
 lab_item_ids <- c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)
 
 labevents_filtered <- filter(labevents, itemid %in% lab_item_ids)
-labevents_filtered <- labevents_filtered %>%
+labevents_before_icu <- labevents_filtered %>%
   inner_join(icustays_tble, by = "subject_id") %>%
-  group_by(subject_id, stay_id) %>%
-  arrange(storetime) %>%
-  filter(row_number() == n()) %>%
+  filter(storetime < intime)
+
+labevents_last_measurement <- labevents_before_icu %>%
+  group_by(subject_id, itemid) %>%
+  slice_max(order_by = storetime, n = 1, with_ties = FALSE) %>%
   ungroup()
 
-labevents_tble <- labevents_filtered %>%
+labevents_tble <- labevents_last_measurement %>%
   pivot_wider(
     id_cols = c(subject_id, stay_id),
     names_from = itemid,
-    values_from = value,
-    values_fill = list(value = NA) 
+    values_from = valuenum,  
+    values_fill = list(valuenum = NA)  
   ) %>%
   rename(
-    bicarbonate = `50882`,
-    chloride = `50902`,
     creatinine = `50912`,
-    glucose = `50931`,
     potassium = `50971`,
     sodium = `50983`,
+    chloride = `50902`,
+    bicarbonate = `50882`,
     hematocrit = `51221`,
-    wbc = `51301` 
+    white_blood_cell_count = `51301`,
+    glucose = `50931`
   )
 
 labevents_tble
