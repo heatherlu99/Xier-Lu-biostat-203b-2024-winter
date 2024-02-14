@@ -442,12 +442,19 @@ We are interested in the vitals for ICU patients: heart rate (220045), systolic 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `chartevents_pq` folder available at the current working directory, for example, by a symbolic link.
 **Amswer:**
 ```{r}
+library(arrow)
+library(dplyr)
+chartevents <- read_csv("~/mimic/icu/chartevents.csv.gz")
+write_parquet(chartevents, "~/desktop/203hw/hw3/chartevents.parquet")
+```
+
+```{r}
 library(dplyr)
 library(arrow)
 library(readr)
 library(tidyr)
 
-chartevents <- read_csv("~/mimic/icu/chartevents.csv.gz")
+chartevents <- arrow::read_parquet("~/desktop/203hw/hw3/chartevents.parquet")
 d_items <- read_csv("~/mimic/icu/d_items.csv.gz")
 
 items_filter <- filter(d_items, itemid %in% c(220045, 220179, 220180, 223761, 220210))
