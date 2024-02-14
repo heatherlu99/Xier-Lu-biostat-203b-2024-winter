@@ -453,25 +453,32 @@ d_items <- read_csv("~/mimic/icu/d_items.csv.gz")
 items_filter <- filter(d_items, itemid %in% c(220045, 220179, 220180, 223761, 220210))
 chartevents_filtered <- filter(chartevents, itemid %in% items_filter$itemid)
 
-subset_chartevents <- chartevents_filtered %>%
-  inner_join(icustays_tble, by = "subject_id") %>%
-  group_by(subject_id, stay_id) %>%
-  arrange(charttime) %>%
-  filter(row_number() == 1) %>%
+chartevents_within_icu <- chartevents_filtered %>%
+  inner_join(icustays_tble, by = c("subject_id", "hadm_id")) %>%
+  filter(charttime >= intime & charttime <= outtime)
+
+first_vitals_within_icu <- chartevents_within_icu %>%
+  select(-stay_id.y) %>%  
+  rename(stay_id = stay_id.x) %>%  
+  group_by(stay_id, itemid) %>%
+  slice_min(order_by = charttime, n = 1) %>%
   ungroup()
 
-
-  
-chartevents_tble <- subset_chartevents %>%
+chartevents_tble <- first_vitals_within_icu %>%
   pivot_wider(
-    names_from = itemid, 
-    values_from = valuenum,
-    names_prefix = "vital_"
+    id_cols = c(subject_id, stay_id),
+    names_from = itemid,
+    values_from = value,
+    values_fn = list(value = first) 
+  ) %>%
+  rename(
+    heart_rate = `220045`,
+    non_invasive_blood_pressure_systolic = `220179`,
+    non_invasive_blood_pressure_diatolic = `220180`,
+    temperature_f = `223761`,
+    respiratory_rate = `220210`
   )
-
 chartevents_tble
-
-
 ```
 
 ## Q7. Putting things together
