@@ -12,7 +12,7 @@ format:
     toc-location: left
     code-fold: false
 execute:
-  eval: false
+  eval: ture
 ---
 
 Display machine information for reproducibility:
@@ -31,7 +31,9 @@ library(tidyverse)
 
 Display your machine memory.
 ```{r}
+#  eval: ture
 memuse::Sys.meminfo()
+
 ```
 
 In this exercise, we use tidyverse (ggplot2, dplyr, etc) to explore the [MIMIC-IV](https://mimic.mit.edu/docs/iv/) data introduced in [homework 1](https://ucla-biostat-203b.github.io/2024winter/hw/hw1/hw1.html) and to build a cohort of ICU stays.
@@ -312,11 +314,50 @@ zcat < ~/mimic/hosp/patients.csv.gz | head
 
 ### Q4.1 Ingestion
 
-Import `patients.csv.gz` (<https://mimic.mit.edu/docs/iv/modules/hosp/patients/>) as a tibble `patients_tble`.
+Import `patients.csv.gz` (<https://mimic.mit.edu/docs/iv/modules/hosp/patients/>) as a tibble `patients_tble`.  
+**Answer：**
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
 
+patients_tble <- read_csv("~/mimic/hosp/patients.csv.gz")
+```
 ### Q4.2 Summary and visualization
 
 Summarize variables `gender` and `anchor_age` by graphics, and explain any patterns you see.
+
+**Answer：**
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+#gender
+gender_distribution <- patients_tble %>%
+  count(gender) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+ggplot(gender_distribution, aes(x = gender, y = percentage, fill = gender)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Gender Distribution", x = "Gender", y = "Percentage (%)") +
+  theme_minimal()
+
+#anchor_age
+age_distribution <- patients_tble %>%
+  count(anchor_age) %>%
+  mutate(percentage1 = n / sum(n) * 100)
+
+ggplot(age_distribution, aes(x = anchor_age, y = percentage1)) +
+  geom_bar(stat = "identity", fill = "blue", color = "black") +
+  labs(
+    title = "Distribution of Anchor Age",
+    x = "Anchor Age",
+    y = "Percentage (%)"
+  ) +
+  theme_minimal()
+
+```
 
 ## Q5. Lab results
 
@@ -337,6 +378,49 @@ We are interested in the lab measurements of creatinine (50912), potassium (5097
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `labevents_pq` folder available at the current working directory `hw3`, for example, by a symbolic link.
 
+```{bash}
+ln -s ~/mimic/hosp/labevents.parquet ~/desktop/203hw/hw3/labevents_pq
+```
+
+```{r}
+library(dplyr)
+library(arrow)
+library(readr)
+library(tidyr)
+
+labevents <- arrow::read_parquet("/Users/luxier/Desktop/203hw/hw3/labevents_pq/part-0.parquet")
+d_labitems <- read_csv("~/mimic/hosp/d_labitems.csv.gz")
+lab_item_ids <- c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)
+
+labevents_filtered <- filter(labevents, itemid %in% lab_item_ids)
+labevents_filtered <- labevents_filtered %>%
+  inner_join(icustays_tble, by = "subject_id") %>%
+  group_by(subject_id, stay_id) %>%
+  arrange(storetime) %>%
+  filter(row_number() == n()) %>%
+  ungroup()
+
+labevents_tble <- labevents_filtered %>%
+  pivot_wider(
+    id_cols = c(subject_id, stay_id),
+    names_from = itemid,
+    values_from = value,
+    values_fill = list(value = NA) 
+  ) %>%
+  rename(
+    bicarbonate = `50882`,
+    chloride = `50902`,
+    creatinine = `50912`,
+    glucose = `50931`,
+    potassium = `50971`,
+    sodium = `50983`,
+    hematocrit = `51221`,
+    wbc = `51301` 
+  )
+
+labevents_tble
+```
+
 ## Q6. Vitals from charted events
 
 `chartevents.csv.gz` (<https://mimic.mit.edu/docs/iv/modules/icu/chartevents/>) contains all the charted data available for a patient. During their ICU stay, the primary repository of a patient’s information is their electronic chart. The `itemid` variable indicates a single measurement type in the database. The `value` variable is the value measured for `itemid`. The first 10 lines of `chartevents.csv.gz` are
@@ -354,6 +438,39 @@ We are interested in the vitals for ICU patients: heart rate (220045), systolic 
 ![](chartevents_tble.png)
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `chartevents_pq` folder available at the current working directory, for example, by a symbolic link.
+**Amswer:**
+```{r}
+library(dplyr)
+library(arrow)
+library(readr)
+library(tidyr)
+
+chartevents <- read_csv("~/mimic/icu/chartevents.csv.gz")
+d_items <- read_csv("~/mimic/icu/d_items.csv.gz")
+
+items_filter <- filter(d_items, itemid %in% c(220045, 220179, 220180, 223761, 220210))
+chartevents_filtered <- filter(chartevents, itemid %in% items_filter$itemid)
+
+subset_chartevents <- chartevents_filtered %>%
+  inner_join(icustays_tble, by = "subject_id") %>%
+  group_by(subject_id, stay_id) %>%
+  arrange(charttime) %>%
+  filter(row_number() == 1) %>%
+  ungroup()
+
+
+  
+chartevents_tble <- subset_chartevents %>%
+  pivot_wider(
+    names_from = itemid, 
+    values_from = valuenum,
+    names_prefix = "vital_"
+  )
+
+chartevents_tble
+
+
+```
 
 ## Q7. Putting things together
 
