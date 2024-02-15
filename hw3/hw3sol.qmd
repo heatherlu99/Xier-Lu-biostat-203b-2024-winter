@@ -514,12 +514,13 @@ chartevents <- arrow::read_parquet("~/desktop/203hw/hw3/chartevents.parquet")
 
 #intime>=18
 icustays_tble <- icustays_tble %>%
-  inner_join(patients_tble, by = "subject_id") %>%  
+  left_join(patients_tble, by = "subject_id") %>%  
   mutate(
     intime_year = year(intime),  
     age_at_intime = anchor_age + (intime_year - anchor_year)  
   ) %>%
   filter(age_at_intime >= 18)
+  
 
 #the first vital measurements during the ICU stay in chartevents_tble
 chartevents_within_icu <- chartevents_filtered %>%
@@ -582,7 +583,8 @@ mimic_icu_cohort <- icustays_tble %>%
   left_join(admissions_tble, by = c("subject_id", "hadm_id")) %>%
   left_join(patients_tble, by = "subject_id") %>%
   left_join(labevents_tble, by = c("subject_id", "stay_id")) %>%
-  left_join(chartevents_tble, by = c("subject_id", "stay_id"))
+  left_join(chartevents_tble, by = c("subject_id", "stay_id")) %>%
+  select(-c(anchor_age.x, anchor_year.x, anchor_year_group.x, dod.x, gender.x, anchor_year.y, anchor_age.y, dod.y, anchor_year_group.y))
 
 mimic_icu_cohort
 ```
@@ -597,3 +599,27 @@ Summarize the following information about the ICU stay cohort `mimic_icu_cohort`
 - Length of ICU stay `los` vs the average vital measurements within the first hour of ICU stay
 
 - Length of ICU stay `los` vs first ICU unit
+
+**Answer：**
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+#Length of ICU stay `los` vs demographic
+ggplot(mimic_icu_cohort, aes(x = race, y = los)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Length of ICU Stay by Race", x = "Race", y = "Length of Stay (days)")
+
+
+mimic_icu_cohort %>%
+  ggplot(aes(x = los, y = insurance)) +
+  geom_point() +
+  labs(
+    title = "Length of ICU stay vs insurance at intime",
+    x = "Length of ICU stay",
+    y = "Insurance"
+  ) +
+  theme_minimal()
+
