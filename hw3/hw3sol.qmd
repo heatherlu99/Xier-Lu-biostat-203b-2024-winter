@@ -549,15 +549,13 @@ chartevents_tble <- first_vitals_within_icu %>%
   )
 
 #the last lab measurements before the ICU stay in `labevents_tble`
-lab_item_ids <- c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)
-
 labevents_filtered <- filter(labevents, itemid %in% lab_item_ids)
 labevents_before_icu <- labevents_filtered %>%
   inner_join(icustays_tble, by = "subject_id") %>%
   filter(storetime < intime)
 
 labevents_last_measurement <- labevents_before_icu %>%
-  group_by(subject_id, itemid) %>%
+  group_by(subject_id, stay_id,itemid) %>%
   slice_max(order_by = storetime, n = 1, with_ties = FALSE) %>%
   ungroup()
 
@@ -575,16 +573,16 @@ labevents_tble <- labevents_last_measurement %>%
     chloride = `50902`,
     bicarbonate = `50882`,
     hematocrit = `51221`,
-    white_blood_cell_count = `51301`,
+    wbc = `51301`,
     glucose = `50931`
   )
 
 #combine all the tables
 mimic_icu_cohort <- icustays_tble %>%
-  inner_join(admissions_tble, by = c("subject_id", "hadm_id")) %>%
-  inner_join(patients_tble, by = "subject_id") %>%
-  inner_join(labevents_tble, by = c("subject_id", "stay_id")) %>%
-  inner_join(chartevents_tble, by = c("subject_id", "stay_id"))
+  left_join(admissions_tble, by = c("subject_id", "hadm_id")) %>%
+  left_join(patients_tble, by = "subject_id") %>%
+  left_join(labevents_tble, by = c("subject_id", "stay_id")) %>%
+  left_join(chartevents_tble, by = c("subject_id", "stay_id"))
 
 mimic_icu_cohort
 ```
