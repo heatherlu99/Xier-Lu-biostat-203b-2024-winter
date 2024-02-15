@@ -398,7 +398,7 @@ labevents_before_icu <- labevents_filtered %>%
   filter(storetime < intime)
 
 labevents_last_measurement <- labevents_before_icu %>%
-  group_by(subject_id, itemid) %>%
+  group_by(subject_id, stay_id,itemid) %>%
   slice_max(order_by = storetime, n = 1, with_ties = FALSE) %>%
   ungroup()
 
@@ -416,7 +416,7 @@ labevents_tble <- labevents_last_measurement %>%
     chloride = `50902`,
     bicarbonate = `50882`,
     hematocrit = `51221`,
-    white_blood_cell_count = `51301`,
+    wbc = `51301`,
     glucose = `50931`
   )
 
@@ -501,7 +501,93 @@ Let us create a tibble `mimic_icu_cohort` for all ICU stays, where rows are all 
 The final `mimic_icu_cohort` should have one row per ICU stay and columns for each variable.
 
 ![](mimic_icu_cohort.png)
+**Answer：**
+```{r}
+library(dplyr)
+library(lubridate)
 
+patients_tble <- read_csv("~/mimic/hosp/patients.csv.gz")
+admissions_tble <- read_csv("~/mimic/hosp/admissions.csv.gz")
+icustays_tble <- read_csv("~/mimic/icu/icustays.csv.gz")
+labevents <- arrow::read_parquet("/Users/luxier/Desktop/203hw/hw3/labevents_pq/part-0.parquet")
+chartevents <- arrow::read_parquet("~/desktop/203hw/hw3/chartevents.parquet")
+
+#intime>=18
+icustays_tble <- icustays_tble %>%
+  inner_join(patients_tble, by = "subject_id") %>%  
+  mutate(
+    intime_year = year(intime),  
+    age_at_intime = anchor_age + (intime_year - anchor_year)  
+  ) %>%
+  filter(age_at_intime >= 18)
+
+#the first vital measurements during the ICU stay in chartevents_tble
+chartevents_within_icu <- chartevents_filtered %>%
+  inner_join(icustays_tble, by = c("subject_id", "hadm_id")) %>%
+  filter(charttime >= intime & charttime <= outtime)
+
+first_vitals_within_icu <- chartevents_within_icu %>%
+  select(-stay_id.y) %>%  
+  rename(stay_id = stay_id.x) %>%  
+  group_by(stay_id, itemid) %>%
+  slice_min(order_by = charttime, n = 1) %>%
+  ungroup()
+
+chartevents_tble <- first_vitals_within_icu %>%
+  pivot_wider(
+    id_cols = c(subject_id, stay_id),
+    names_from = itemid,
+    values_from = value,
+    values_fn = list(value = first) 
+  ) %>%
+  rename(
+    heart_rate = `220045`,
+    non_invasive_blood_pressure_systolic = `220179`,
+    non_invasive_blood_pressure_diatolic = `220180`,
+    temperature_f = `223761`,
+    respiratory_rate = `220210`
+  )
+
+#the last lab measurements before the ICU stay in `labevents_tble`
+lab_item_ids <- c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)
+
+labevents_filtered <- filter(labevents, itemid %in% lab_item_ids)
+labevents_before_icu <- labevents_filtered %>%
+  inner_join(icustays_tble, by = "subject_id") %>%
+  filter(storetime < intime)
+
+labevents_last_measurement <- labevents_before_icu %>%
+  group_by(subject_id, itemid) %>%
+  slice_max(order_by = storetime, n = 1, with_ties = FALSE) %>%
+  ungroup()
+
+labevents_tble <- labevents_last_measurement %>%
+  pivot_wider(
+    id_cols = c(subject_id, stay_id),
+    names_from = itemid,
+    values_from = valuenum,  
+    values_fill = list(valuenum = NA)  
+  ) %>%
+  rename(
+    creatinine = `50912`,
+    potassium = `50971`,
+    sodium = `50983`,
+    chloride = `50902`,
+    bicarbonate = `50882`,
+    hematocrit = `51221`,
+    white_blood_cell_count = `51301`,
+    glucose = `50931`
+  )
+
+#combine all the tables
+mimic_icu_cohort <- icustays_tble %>%
+  inner_join(admissions_tble, by = c("subject_id", "hadm_id")) %>%
+  inner_join(patients_tble, by = "subject_id") %>%
+  inner_join(labevents_tble, by = c("subject_id", "stay_id")) %>%
+  inner_join(chartevents_tble, by = c("subject_id", "stay_id"))
+
+mimic_icu_cohort
+```
 ## Q8. Exploratory data analysis (EDA)
 
 Summarize the following information about the ICU stay cohort `mimic_icu_cohort` using appropriate numerics or graphs:
