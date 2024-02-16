@@ -520,7 +520,7 @@ icustays_tble <- icustays_tble %>%
     age_at_intime = anchor_age + (intime_year - anchor_year)  
   ) %>%
   filter(age_at_intime >= 18)
-  
+
 
 #the first vital measurements during the ICU stay in chartevents_tble
 chartevents_within_icu <- chartevents_filtered %>%
@@ -584,7 +584,14 @@ mimic_icu_cohort <- icustays_tble %>%
   left_join(patients_tble, by = "subject_id") %>%
   left_join(labevents_tble, by = c("subject_id", "stay_id")) %>%
   left_join(chartevents_tble, by = c("subject_id", "stay_id")) %>%
-  select(-c(anchor_age.x, anchor_year.x, anchor_year_group.x, dod.x, gender.x, anchor_year.y, anchor_age.y, dod.y, anchor_year_group.y))
+  rename(
+    anchor_age = anchor_age.x,
+    anchor_year = anchor_year.x,
+    anchor_year_group = anchor_year_group.x,
+    gender = gender.x,
+    dod = dod.x
+  ) %>%
+  select(-c(anchor_age.y, anchor_year.y, anchor_year_group.y, dod.y, gender.y))
 
 mimic_icu_cohort
 ```
@@ -600,7 +607,8 @@ Summarize the following information about the ICU stay cohort `mimic_icu_cohort`
 
 - Length of ICU stay `los` vs first ICU unit
 
-**Answer：**
+**Answer：**  
+- Length of ICU stay `los` vs demographic variables (race, insurance, marital_status, gender, age at intime)  
 ```{r}
 library(dplyr)
 library(ggplot2)
@@ -613,13 +621,111 @@ ggplot(mimic_icu_cohort, aes(x = race, y = los)) +
   labs(title = "Length of ICU Stay by Race", x = "Race", y = "Length of Stay (days)")
 
 
-mimic_icu_cohort %>%
-  ggplot(aes(x = los, y = insurance)) +
-  geom_point() +
-  labs(
-    title = "Length of ICU stay vs insurance at intime",
-    x = "Length of ICU stay",
-    y = "Insurance"
-  ) +
-  theme_minimal()
+ggplot(mimic_icu_cohort, aes(x = insurance, y = los)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Length of ICU Stay by Insurance", x = "Insurance", y = "Length of Stay (days)")
 
+ggplot(mimic_icu_cohort, aes(x = marital_status, y = los)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Length of ICU Stay by Marital Status", x = "Marital Status", y = "Length of Stay (days)")
+
+ggplot(mimic_icu_cohort, aes(x = gender, y = los)) +
+  geom_boxplot() +
+  labs(title = "Length of ICU Stay by Gender", x = "Gender", y = "Length of Stay (days)")
+
+ggplot(mimic_icu_cohort, aes(x = age_at_intime, y = los)) +
+  geom_point() +
+  labs(title = "Length of ICU Stay by Age at Intime", x = "Age at Intime", y = "Length of Stay (days)")
+
+```
+
+- Length of ICU stay `los` vs the last available lab measurements before ICU stay
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+lab_vars <- c("creatinine", "potassium", "sodium", "chloride", "bicarbonate", "hematocrit", "wbc", "glucose")
+
+mimic_icu_cohort_long <- mimic_icu_cohort %>%
+  gather(key = "lab_measure", value = "lab_value", one_of(lab_vars))
+
+ggplot(mimic_icu_cohort_long, aes(x = los, y = lab_value)) +
+  geom_point() +
+  facet_wrap(~ lab_measure, scales = "free_y") +
+  labs(title = "Length of ICU Stay by Last Available Lab Measurements", 
+       x = "Length of Stay (days)", 
+       y = "Lab Measurement Value") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+- Length of ICU stay `los` vs the average vital measurements within the first hour of ICU stay. 
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+
+mimic_icu_cohort0 <- mimic_icu_cohort %>%
+  mutate(
+    heart_rate = as.numeric(heart_rate),
+    non_invasive_blood_pressure_systolic = as.numeric(non_invasive_blood_pressure_systolic),
+    non_invasive_blood_pressure_diatolic = as.numeric(non_invasive_blood_pressure_diatolic),
+    temperature_f = as.numeric(temperature_f),
+    respiratory_rate = as.numeric(respiratory_rate)
+  )
+
+mimic_icu_cohort1 <- mimic_icu_cohort0 %>%
+  group_by(subject_id, stay_id) %>%
+  summarise(
+    avg_heart_rate = mean(heart_rate, na.rm = TRUE),
+    avg_sys_bp = mean(non_invasive_blood_pressure_systolic, na.rm = TRUE),
+    avg_dia_bp = mean(non_invasive_blood_pressure_diatolic, na.rm = TRUE),
+    avg_temperature_f = mean(temperature_f, na.rm = TRUE),  
+    avg_respiratory_rate = mean(respiratory_rate, na.rm = TRUE)
+  )
+
+mimic_icu_cohort1 <- mimic_icu_cohort0 %>%
+  group_by(subject_id, stay_id) %>%
+  summarise(
+    avg_heart_rate = mean(heart_rate, na.rm = TRUE),
+    avg_sys_bp = mean(non_invasive_blood_pressure_systolic, na.rm = TRUE),
+    avg_dia_bp = mean(non_invasive_blood_pressure_diatolic, na.rm = TRUE),
+    avg_temperature_f = mean(temperature_f, na.rm = TRUE),  
+    avg_respiratory_rate = mean(respiratory_rate, na.rm = TRUE),
+    los = los,
+    .groups = 'drop'
+  )
+
+ggplot(mimic_icu_cohort1, aes(x = avg_heart_rate, y = los)) +
+  geom_point() +
+  labs(title = "Length of ICU Stay by Average Heart Rate", x = "Average Heart Rate", y = "Length of Stay (days)")
+
+ggplot(mimic_icu_cohort1, aes(x = avg_sys_bp, y = los)) +
+  geom_point() +
+  labs(title = "Length of ICU Stay by Average Systolic Blood Pressure", x = "Average Systolic Blood Pressure", y = "Length of Stay (days)")
+
+ggplot(mimic_icu_cohort1, aes(x = avg_dia_bp, y = los)) +
+  geom_point() +
+  labs(title = "Length of ICU Stay by Average Diastolic Blood Pressure", x = "Average Diastolic Blood Pressure", y = "Length of Stay (days)")
+
+ggplot(mimic_icu_cohort1, aes(x = avg_temperature_f, y = los)) +
+  geom_point() +
+  labs(title = "Length of ICU Stay by Average Temperature", x = "Average Temperature", y = "Length of Stay (days)")
+
+
+```
+
+- Length of ICU stay `los` vs first ICU unit
+```{r}
+ggplot(mimic_icu_cohort, aes(x = first_careunit, y = los)) +
+  geom_boxplot() +
+  labs(title = "Length of ICU Stay by First ICU Unit",
+       x = "First ICU Unit",
+       y = "Length of Stay (days)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
