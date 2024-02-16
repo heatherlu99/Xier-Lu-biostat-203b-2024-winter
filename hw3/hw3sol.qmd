@@ -716,8 +716,6 @@ ggplot(mimic_icu_cohort1, aes(x = avg_dia_bp, y = los)) +
 ggplot(mimic_icu_cohort1, aes(x = avg_temperature_f, y = los)) +
   geom_point() +
   labs(title = "Length of ICU Stay by Average Temperature", x = "Average Temperature", y = "Length of Stay (days)")
-
-
 ```
 
 - Length of ICU stay `los` vs first ICU unit
