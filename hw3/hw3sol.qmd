@@ -50,6 +50,8 @@ A patient's ADT history records the time of admission, discharge, and transfer i
 Do a similar visualization for the patient with `subject_id` 10013310 using ggplot.
 
 Hint: We need to pull information from data files `patients.csv.gz`, `admissions.csv.gz`, `transfers.csv.gz`, `labevents.csv.gz`, `procedures_icd.csv.gz`, `diagnoses_icd.csv.gz`, `d_icd_procedures.csv.gz`, and `d_icd_diagnoses.csv.gz`. For the big file `labevents.csv.gz`, use the Parquet format you generated in Homework 2. For reproducibility, make the Parquet folder `labevents_pq` available at the current working directory `hw3`, for example, by a symbolic link. Make your code reproducible.
+
+####Answer
 ```{bash}
 ln -s ~/mimic/hosp/labevents.parquet ~/desktop/203hw/hw3/labevents_pq
 ```
@@ -59,61 +61,72 @@ library(ggplot2)
 library(dplyr)
 library(arrow)
 
+sid <- 10013310
+
 # read the data
-patients <- read_csv("~/mimic/hosp/patients.csv.gz")
-admissions <- read_csv("~/mimic/hosp/admissions.csv.gz")
-transfers <- read_csv("~/mimic/hosp/transfers.csv.gz")
-labevents <- arrow::read_parquet("/Users/luxier/Desktop/203hw/hw3/labevents_pq/part-0.parquet")
-procedures_icd <- read_csv("~/mimic/hosp/procedures_icd.csv.gz")
-diagnoses_icd <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz")
+sid_patients <- read_csv("~/mimic/hosp/patients.csv.gz") |> 
+  filter(subject_id == sid) |>
+  print(width = Inf)
+sid_admissions <- read_csv("~/mimic/hosp/admissions.csv.gz") |>
+  filter(subject_id == sid) |>
+  print(width = Inf)
+sid_adt <- read_csv("~/mimic/hosp/transfers.csv.gz") |>
+  filter(subject_id == sid) |>
+  print(width = Inf)
+
+sid_lab <- arrow::read_parquet("/Users/luxier/Desktop/203hw/hw3/labevents_pq/part-0.parquet") |> 
+  filter(subject_id == sid) |>
+  print(width = Inf)
+
 d_icd_procedures <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz")
+sid_procedures <- read_csv("~/mimic/hosp/procedures_icd.csv.gz") |>
+  filter(subject_id == sid) |>
+  left_join(d_icd_procedures, by = "icd_code")|>
+  mutate(chartdate = as.POSIXct(chartdate)) |>
+  print(width = Inf)
+
 d_icd_diagnoses <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
-
-patient_filter <- filter(patients, subject_id == 10013310)
-admissions_filter <- filter(admissions, subject_id == 10013310)
-transfers_filter <- filter(transfers, subject_id == 10013310)
-labevents_filter <- filter(labevents, subject_id == 10013310)
-procedures_filter <- filter(procedures_icd, subject_id == 10013310)
-diagnoses_filter <- filter(diagnoses_icd, subject_id == 10013310)
-
-  
-combined_data <- patient_filter %>%
-  left_join(admissions_filter, by = "subject_id") %>%
-  left_join(transfers_filter, by = "subject_id") %>%
-  left_join(labevents_filter, by = "subject_id") %>%
-  left_join(procedures_filter, by = "subject_id") %>%
-  left_join(diagnoses_filter, by = "subject_id")
-
-procedure_names <- left_join(procedures_icd, d_icd_procedures, by = "icd_code")
-top_diagnoses <- diagnoses_icd %>%
-  left_join(d_icd_diagnoses, by = "icd_code") %>%
-  group_by(subject_id, hadm_id) %>%
-  arrange(seq_num) %>%
-  slice_head(n = 3) %>%
-  summarise(subtitle = paste(long_title, collapse = "; ")) %>%
-  ungroup()
-
-combined_data <- left_join(combined_data, top_diagnoses, by = c("subject_id"))
-
-patient_id <- unique(combined_data$subject_id)
-subtitle <- unique(combined_data$subtitle)
-
-ggplot(combined_data, aes(x = calendar_time, y = event_type)) + 
-  geom_segment(aes(color = care_unit, size = is_icu_ccu), show.legend = FALSE) +  
-  geom_point(data = combined_data %>% filter(event_type == "Lab"), aes(x = calendar_time), shape = 4) +  
-  geom_point(data = combined_data %>% filter(event_type == "Procedure"), aes(x = calendar_time, shape = procedure_type)) +  
-  labs(
-    title = paste("Patient", patient_id, "ADT History"),
-    subtitle = subtitle,
-    x = "Calendar Time",
-    y = "Event Type"
-  ) +
-  scale_shape_manual(values = c("Central venous catheter placement" = 16, "Other incision of brain" = 17, "Spinal tap" = 18)) + 
-  theme_minimal()
-
+sid_diagnoses_icd <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz") |>
+  filter(subject_id == sid) |>
+  left_join(d_icd_diagnoses, by = "icd_code") |>
+  print(width = Inf)
 
 ```
-
+```{r}
+sid_adt %>%
+  filter(eventtype != "discharge") %>%
+  ggplot() +
+  geom_segment(aes(
+    x = intime, 
+    xend = outtime, 
+    y = "ADT", 
+    yend = "ADT", 
+    color = careunit, 
+    linewidth = str_detect(careunit, "(ICU|CCU)")
+    )) +
+  guides(linewidth = "none") +
+  geom_point(data = sid_lab, 
+             aes(x = charttime, y = "Lab", color = "Lab"),
+             shape = 3, size = 4) + 
+  geom_point(data = sid_procedures, 
+             aes(x = chartdate, y = "Procedure", color = "Procedure", shape = long_title),
+             size = 4) +
+  scale_y_discrete(limits = c("Procedure", "Lab", "ADT")) +
+  labs(
+    x = "Calendar Time",
+    y = "",
+    title = str_c("Patient ", sid, " ", ",", sid_patients$gender, " ,", " ", sid_patients$anchor_age, " years old", ",", " ", sid_admissions$race[1]),
+    subtitle = str_c(sid_diagnoses_icd$long_title[1], "\n", sid_diagnoses_icd$long_title[2], "\n",  sid_diagnoses_icd$long_title[3]),
+    shape = "Procedure",
+  )+
+  theme(
+    legend.position = "bottom", 
+    legend.box = "vertical", 
+    legend.box.just = "center", 
+    legend.text = element_text(size = 2)
+  )
+  
+```
 ### Q1.2 ICU stays
 
 ICU stays are a subset of ADT history. We will visualize the vitals of a patient during ICU stays. 
