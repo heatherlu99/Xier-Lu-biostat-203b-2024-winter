@@ -11,8 +11,7 @@ format:
     toc-depth: 4
     toc-location: left
     code-fold: false
-execute:
-  eval: true
+
 ---
 
 Display machine information:
@@ -269,12 +268,11 @@ Develop a Shiny app for exploring the ICU cohort data created in Q1. The app sho
 ```{r}
 library(shiny)
 mimic_icu_cohort <- read_rds("mimiciv_shiny/mimic_icu_cohort.rds") 
-#BigQuery
+
 satoken <- "biostat-203b-2024-winter-313290ce47a6.json"
-# BigQuery authentication using service account
+
 bq_auth(path = satoken)
 
-# connect to the BigQuery database `biostat-203b-2024-winter.mimic4_v2_2`
 con_bq <- dbConnect(
   bigrquery::bigquery(),
   project = "biostat-203b-2024-winter",
@@ -283,85 +281,92 @@ con_bq <- dbConnect(
 )
 con_bq
 
-transfers_tble <- tbl(con_bq, "transfers") %>%
-  collect()
-lab_parquet <- tbl(con_bq, "labevents")%>%
-  collect()
-procedures_tble <- tbl(con_bq, "procedures_icd")%>%
-  collect()
-diagnoses_tble <- tbl(con_bq, "diagnoses_icd")%>%
-  collect()
+transfers_tble <- tbl(con_bq, "transfers") 
+lab_parquet <- tbl(con_bq, "labevents")
+procedures_tble <- tbl(con_bq, "procedures_icd")
+diagnoses_tble <- tbl(con_bq, "diagnoses_icd")
 
-d_icd_procedures_tble <- tbl(con_bq, "d_icd_procedures")%>%
-  collect()
-d_icd_diagnoses_tble <- tbl(con_bq, "d_icd_diagnoses")%>%
-  collect()
+d_icd_procedures_tble <- tbl(con_bq, "d_icd_procedures")
+d_icd_diagnoses_tble <- tbl(con_bq, "d_icd_diagnoses")
+
 
 ```
 
+
 ```{r}
-# eval: false
+# eval:false
 ui <- fluidPage(
-  titlePanel("ICU Cohort data"),
-  tabsetPanel(
-    tabPanel("Summary", fluid = TRUE,
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput(inputId = "variable",
-                             label = "Variable of interest:",
-                             choices = c("First care unit" = "first_careunit",
-                                         "Last care unit" = "last_careunit", 
-                                         "Admission Type" = "admission_type",
-                                         "Insurance" = "insurance",
-                                         "Language" = "language",
-                                         "Marital status" ="marital_status",
-                                         "Race" = "race", 
-                                         "Gender" = "gender",
-                                         "Age at intime" = "age_at_intime",
-                                         "Lab Events" = "Lab_Measurement", 
-                                         "Vitals" = "Vital_Measurements")),
-                 checkboxInput("removeOutliers", "Remove outliers in IQR method for measurements?", FALSE)
-               ),
-               mainPanel(
-                 plotOutput("summary_plot")
-               )
+ tabPanel("icu cohort data", 
+             tabPanel("Patient Characteristic", fluid = TRUE,
+            
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput(inputId = "variable",
+                                      label = "Variable of interest:",
+                                      choices = c("First care unit" = "first_careunit",
+                                                  "Last care unit" = "last_careunit", 
+                                                  "Admission Type" = "admission_type",
+                                                  "Insurance" = "insurance",
+                                                  "Language" = "language",
+                                                  "Marital status" ="marital_status",
+                                                  "Race" = "race", 
+                                                  "Gender" = "gender",
+                                                  "Age at intime" = "age_at_intime",
+                                                  "Lab Events" = "Lab_Measurement", 
+                                                  "Vitals" = "Vital_Measurements")
+                          ),
+                          checkboxInput("outliers", "Remove outliers in IQR method for measurments", FALSE)
+                        ),  
+                        mainPanel(
+                          plotOutput("needplot")
+                        )
+                      )
+             ),
+             
+
+             tabPanel("Patient's ADT and ICU stay information", fluid = TRUE,
+                      sidebarLayout(
+
+                        sidebarPanel(
+                          numericInput("patient_id", "Patient ID", 10012123)
+                        ),
+
+                        mainPanel(
+                          plotOutput("needplot2")
+                        )
+                      )
              )
-    ),
-    tabPanel("Patient Details",
-             sidebarLayout(
-               sidebarPanel(
-                 numericInput("patient_id", "Patient ID", 10012123),
-               ),
-               mainPanel(
-                 plotOutput("patient_vitals_plot")
-               )
-             )
-    )
+             
   )
 )
 
-server <- function(input, output) {
-  selected_variable <- reactive({
-    input$variable_of_interest
-  })
+
+server <- function(input, output){
   
+  #get input
+  selected_variable <- reactive({
+    input$variable
+  })
   selected_patient <- reactive({
     input$patient_id
   })
-
-  observe({
-    req(selected_variable())
+  
+  mimic_data <- reactive({
+    as.data.frame(mimic_icu_cohort) 
+  })
+  
+  
+  output$needplot <- renderPlot({
+    data <- mimic_data()
+    variable <- as.character(input$variable)
     
-    if (selected_variable() == "Lab_Measurement") {
-      selected_vars <- c("Bicarbonate", "Chloride", "Creatinine", "Glucose", "Potassium", "Sodium", 
-                         "Hematocrit", "White Blood Cells")
-      selected_data <- mimic_icu_cohort[, selected_vars]
+    if (variable == "Lab_Measurement") {
+      selected_vars <- c("creatinine", "potassium", "sodium", "chloride", "bicarbonate", "hematocrit", "wbc", "glucose")
+      selected_data <- data[, selected_vars]
       selected_data_long <- selected_data %>%
         pivot_longer(cols = everything(),
                      names_to = "Lab_Measurement",
-                     values_to = "Value") %>%
-        mutate(Lab_Measurement = as.factor(Lab_Measurement),
-               Value = as.numeric(Value))
+                     values_to = "Value")
       
       processed_data <- selected_data_long
       if (input$outliers) {
@@ -375,16 +380,14 @@ server <- function(input, output) {
         processed_data <- processed_data[!(processed_data$Value %in% outliers$Value), ]
       }
       
-      output$summary_plot <- renderPlot({
-        ggplot(processed_data, aes(x = Lab_Measurement, y = Value)) +
-          geom_boxplot() +
-          labs(title = "Boxplot Example", x = "Lab_Measurement", y = "Value") +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-          coord_flip()
-      })
-    } else if (selected_variable() == "Vital_Measurements") {
-      selected_vars_icu <- c("Heart Rate", "Non Invasive Blood Pressure systolic", "Non Invasive Blood Pressure diastolic", "Respiratory Rate", "Temperature Fahrenheit")
-      selected_data_icu <- mimic_icu_cohort[, selected_vars_icu]
+      ggplot(processed_data, aes(x = Lab_Measurement, y = Value)) +
+        geom_boxplot() +
+        labs(title = "Boxplot Example", x = "Lab_Measurement", y = "Value") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        coord_flip()
+    } else if (variable == "Vital_Measurements") {
+      selected_vars_icu <- c("heart_rate", "non_invasive_blood_pressure_systolic", "non_invasive_blood_pressure_diatolic", "temperature_f", "respiratory_rate")
+      selected_data_icu <- data[, selected_vars_icu]
       selected_data_iculong <- selected_data_icu %>%
         pivot_longer(cols = everything(),
                      names_to = "Vital_Measurements",
@@ -401,32 +404,29 @@ server <- function(input, output) {
         processed_data <- processed_data[!(processed_data$Value %in% outliers$Value), ]
       }
       
-      output$summary_plot <- renderPlot({
-        ggplot(processed_data, aes(x = Vital_Measurements, y = Value)) +
-          geom_boxplot() +
-          labs(title = "Boxplot Example", x = "Vital_Measurements", y = "Value") +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-          coord_flip()
-      })
+      ggplot(processed_data, aes(x = Vital_Measurements, y = Value)) +
+        geom_boxplot() +
+        labs(title = "Boxplot Example", x = "Vital_Measurements", y = "Value") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        coord_flip()
     } else {
-      output$summary_plot <- renderPlot({
-        ggplot(mimic_icu_cohort, aes(x = !!sym(selected_variable()))) +
-          geom_bar() +
-          theme_minimal() +
-          labs(title = "Histogram of Last Care Unit") +
-          coord_flip()
-      })
+      ggplot(data, aes_string(x = variable)) +
+        geom_bar() +
+        labs(title = paste("Distribution of", variable),
+             x = variable,
+             y = "Count") 
     }
   })
-  }
-    
- observe({
+ 
+  
+  
+  observe({
     selected_patient_id <- as.numeric(selected_patient())
     
     mimic_icu_cohort_3 <- mimic_icu_cohort %>%
       filter(subject_id == selected_patient_id)
+
     
-  
     patient_id <- selected_patient_id
     
     transfers_sub <- transfers_tble %>%
@@ -452,12 +452,14 @@ server <- function(input, output) {
       left_join(d_icd_diagnoses_tble, by = c("icd_code", "icd_version")) %>%
       select(subject_id, long_title) %>%
       collect()
-
+    
+    
+    # title
     main_title <- paste("Patient", selected_patient_id,",", mimic_icu_cohort_3$gender[1], ",", mimic_icu_cohort_3$anchor_age[1], "years old,", mimic_icu_cohort_3$race[1])
     sub_title <- paste0(diagnoses_sub$long_title[1],"\n",diagnoses_sub$long_title[2],"\n",diagnoses_sub$long_title[3])
     
     
-    output$patient_vitals_plot <- renderPlot({
+    output$needplot2 <- renderPlot({
       ggplot() +
         geom_point(data = procedures_sub, aes(x = as.POSIXct(chartdate), y = "Procedure",
                                               shape = factor(long_title)), na.rm = TRUE) +
@@ -478,7 +480,7 @@ server <- function(input, output) {
   })
 }
 
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
 
 ```
 
