@@ -264,24 +264,6 @@ Develop a Shiny app for exploring the ICU cohort data created in Q1. The app sho
 library(shiny)
 mimic_icu_cohort <- read_rds("mimiciv_shiny/mimic_icu_cohort.rds") 
 
-str(mimic_icu_cohort)
-
-sid_patients <- tbl(con_bq, "patients") |>
-  print(width = Inf)
-sid_admissions <- tbl(con_bq, "admissions") |>
-  print(width = Inf)
-sid_icustays <- tbl(con_bq, "icustays") |>
-  print(width = Inf)
-sid_labevents <- tbl(con_bq, "labevents") |>
-  print(width = Inf)
-sid_chartevents <- tbl(con_bq, "chartevents") |>
-  print(width = Inf)
-sid_adt <- tbl(con_bq, "transfers") |>
-  print(width = Inf)
-sid_procedures <- tbl(con_bq, "procedures_icd") |>
-  print(width = Inf)
-sid_diagnoses_icd <- tbl(con_bq, "diagnoses_icd") |>
-  print(width = Inf)
 ```
 
 ```{r}
@@ -292,7 +274,8 @@ ui <- fluidPage(
              sidebarLayout(
                sidebarPanel(
                  selectInput("variable_of_interest", "Variable of interest",
-                             choices = c("Age", "Gender", "Race", "Last care unit", "Admission type", "Admission location", "Discharge location", "Creatinine", "Potassium", "Sodium", "Chloride", "Bicarbonate", "Hematocrit", "WBC", "Glucose", "Heart rate", "Non-invasive blood pressure systolic", "Non-invasive blood pressure diatolic", "Temperature F", "Respiratory rate")),
+                             choices = c("first_careunit", "last_careunit", "admission_type", "admission_location", "discharge_location", "insurance", "language", "marital_status", "race", "hospital_expire_flag", "los", "age", "gender", "dod", "age_at_intime", "Lab Event" = c("creatinine", "potassium", "sodium", "chloride", "bicarbonate", "hematocrit", "wbc", "glucose", "heart_rate", "non_invasive_blood_pressure_systolic", "non_invasive_blood_pressure_diatolic", "temperature_f", "respiratory_rate")),
+                 checkboxInput("removeOutliers", "Remove outliers in IQR method for measurements?", FALSE)
                ),
                mainPanel(
                  plotOutput("summary_plot")
@@ -314,67 +297,121 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   mimic_data <- reactive({
-    mimic_data <- as.data.frame(mimic_icu_cohort) 
+    as.data.frame(mimic_icu_cohort) 
   })
   
   output$summary_plot <- renderPlot({
-    ggplot(data = mimic_data(), aes_string(x = input$variable_of_interest)) +
+    data <- mimic_data()
+    variable_of_interest <- input$variable_of_interest
+    
+    if (input$removeOutliers) {
+      q1 <- quantile(data[[variable_of_interest]], 0.25)
+      q3 <- quantile(data[[variable_of_interest]], 0.75)
+      iqr <- q3 - q1
+      lower_bound <- q1 - 1.5 * iqr
+      upper_bound <- q3 + 1.5 * iqr
+      data <- data[data[[variable_of_interest]] >= lower_bound & data[[variable_of_interest]] <= upper_bound, ]
+    }
+    
+    ggplot(data, aes(x = as.factor({{variable_of_interest}}))) +
       geom_bar() +
-      facet_wrap(~ input$variable_of_interest, scales = "free") +
-      labs(title = paste("Distribution of", input$variable_of_interest))
+      labs(title = paste("Distribution of", variable_of_interest),
+           x = variable_of_interest,
+           y = "Count") 
   })
   
-  output$patient_info_table <- renderDataTable({
-    req(input$subject_id)
-    
-    selected_patient <- sid_labevents %>%
-      filter(subject_id == input$subject_id)
-    datatable(selected_patient)
+  patient_id <- reactive({
+    as.numeric(input$patient_id)
   })
+  
+  sid_lab <- reactive({
+    tbl(con_bq, "labevents") %>% 
+      filter(subject_id == !!patient_id) %>% 
+      filter(itemid %in% c(50912, 50971, 50983, 50902, 50882, 51221, 51301, 50931)) %>%
+      select(charttime, subject_id, itemid, valuenum) %>%
+      distinct(charttime) %>%
+      collect()
+  })
+  
+  sid_adt <- reactive({
+    tbl(con_bq, "transfers") %>% 
+      filter(subject_id == !!patient_id)  %>%
+      collect()
+  })
+  
+  sid_procedures <- reactive({
+    tbl(con_bq, "procedureevents_mv") %>% 
+      filter(subject_id == !!patient_id) %>%
+      collect()
+  })
+  
+  sid_patients <- reactive({
+    tbl(con_bq, "patients") %>% 
+      filter(subject_id == !!patient_id) %>%
+      collect()
+  })
+  
+  sid_vitals <- reactive({
+    tbl(con_bq, "chartevents") %>% 
+      filter(subject_id == !!patient_id) %>%
+      collect()
+  })
+
+  sid_admissions <- reactive({
+    tbl(con_bq, "admissions") %>% 
+      filter(subject_id == !!patient_id) %>%
+      collect()
+  })
+  
+  sid_diagnoses_icd <- reactive({
+    tbl(con_bq, "diagnoses_icd") %>% 
+      filter(subject_id == !!patient_id) %>%
+      collect()
+  })
+  
+  
   
   output$patient_vitals_plot <- renderPlot({
-    req(input$subject_id)
+    sid_adt_data <- sid_adt()
+    sid_lab_data <- sid_lab()
+    sid_procedures_data <- sid_procedures()
+    sid_patients_data <- sid_patients()
+    sid_vitals_data <- sid_vitals()
+    sid_admissions_data <- sid_admissions()
+    sid_diagnoses_icd_data <- sid_diagnoses_icd()
     
-    selected_patient <- sid_labevents %>%
-      filter(subject_id == input$subject_id)
-    
-    plot <- sid_adt %>%
-  filter(eventtype != "discharge") %>%
-  ggplot() +
-  geom_segment(aes(
-    x = intime, 
-    xend = outtime, 
-    y = "ADT", 
-    yend = "ADT", 
-    color = careunit, 
-    linewidth = str_detect(careunit, "(ICU|CCU)")
-    )) +
-  guides(linewidth = "none") +
-  geom_point(data = sid_lab, 
-             aes(x = charttime, y = "Lab", color = "Lab"),
-             shape = 3, size = 4) + 
-  geom_point(data = sid_procedures, 
-             aes(x = chartdate, y = "Procedure", color = "Procedure", shape = long_title),
-             size = 4) +
-  scale_y_discrete(limits = c("Procedure", "Lab", "ADT")) +
-  labs(
-    x = "Calendar Time",
-    y = "",
-    title = str_c("Patient ", sid, " ", ",", sid_patients$gender, " ,", " ", sid_patients$anchor_age, " years old", ",", " ", sid_admissions$race[1]),
-    subtitle = str_c(sid_diagnoses_icd$long_title[1], "\n", sid_diagnoses_icd$long_title[2], "\n",  sid_diagnoses_icd$long_title[3]),
-    shape = "Procedure",
-  )+
-  theme(
-    legend.position = "bottom", 
-    legend.box = "vertical", 
-    legend.box.just = "center", 
-    legend.text = element_text(size = 2)
-  )
+    ggplot() +
+      geom_segment(data = sid_adt_data,
+                   aes(x = intime, 
+                       xend = outtime, 
+                       y = "ADT", 
+                       yend = "ADT", 
+                       color = careunit, 
+                       linewidth = str_detect(careunit, "(ICU|CCU)"))) +
+      guides(linewidth = "none") +
+      geom_point(data = sid_lab_data, 
+                 aes(x = charttime, y = "Lab", color = "Lab"),
+                 shape = 3, size = 4) + 
+      geom_point(data = sid_procedures_data, 
+                 aes(x = chartdate, y = "Procedure", color = "Procedure", shape = long_title),
+                 size = 4) +
+      scale_y_discrete(limits = c("Procedure", "Lab", "ADT")) +
+      labs(
+        x = "Calendar Time",
+        y = "",
+        title = str_c("Patient ", sid, " ", ",", sid_patients_data$gender, " ,", " ", sid_patients_data$anchor_age, " years old", ",", " ", sid_admissions_data$race[1]),
+        subtitle = str_c(sid_diagnoses_icd_data$long_title[1], "\n", sid_diagnoses_icd_data$long_title[2], "\n",  sid_diagnoses_icd_data$long_title[3]),
+        shape = "Procedure"
+      ) +
+      theme(
+        legend.position = "bottom", 
+        legend.box = "vertical", 
+        legend.box.just = "center", 
+        legend.text = element_text(size = 2)
+      )
   })
 }
 
 shinyApp(ui = ui, server = server)
-
-
 
 ```
