@@ -134,6 +134,16 @@ This figure shows the vitals of the patient `10001217` during ICU stays. The x-a
 
 Do a similar visualization for the patient `10013310`.
 ####Answer
+<<<<<<< HEAD
+=======
+```{r}
+# eval: false
+library(arrow)
+library(dplyr)
+chartevents <- read_csv("~/mimic/icu/chartevents.csv.gz")
+write_parquet(chartevents, "~/desktop/203hw/hw3/chartevents.parquet")
+```
+>>>>>>> develop
 
 ```{r}
 # eval: true

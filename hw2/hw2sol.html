@@ -3168,21 +3168,33 @@ vertical-align: -.125em;
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
   0.764   0.075   0.593 </code></pre>
+=======
+  0.741   0.064   0.415 </code></pre>
+>>>>>>> develop
 </div>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>({</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>   <span class="fu">read.csv</span>(<span class="st">&quot;admissions.csv.gz&quot;</span>)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
   3.005   0.037   3.071 </code></pre>
+=======
+  2.743   0.025   2.771 </code></pre>
+>>>>>>> develop
 </div>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>({</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>   <span class="fu">fread</span>(<span class="st">&quot;admissions.csv.gz&quot;</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
   0.270   0.030   0.325 </code></pre>
+=======
+  0.255   0.023   0.283 </code></pre>
+>>>>>>> develop
 </div>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>pryr<span class="sc">::</span><span class="fu">object_size</span>(<span class="fu">read_csv</span>(<span class="st">&quot;admissions.csv.gz&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3219,7 +3231,11 @@ col3</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
   0.654   0.067   0.331 </code></pre>
+=======
+  0.649   0.051   0.304 </code></pre>
+>>>>>>> develop
 </div>
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>pryr<span class="sc">::</span><span class="fu">object_size</span>(admissions)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3272,7 +3288,11 @@ col3</code></pre>
 <span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
  72.368  56.408 152.714 </code></pre>
+=======
+ 69.227  52.305  85.088 </code></pre>
+>>>>>>> develop
 </div>
 </div>
 </section>
@@ -3337,7 +3357,11 @@ col3</code></pre>
 <span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
  29.238   1.918  27.777 </code></pre>
+=======
+  0.030   0.008   0.104 </code></pre>
+>>>>>>> develop
 </div>
 <div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(labevents_arrow)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3388,7 +3412,11 @@ col3</code></pre>
 <span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
   3.445   0.998   1.802 </code></pre>
+=======
+  3.857   0.578   0.683 </code></pre>
+>>>>>>> develop
 </div>
 <div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(labevents.parquet)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3399,6 +3427,7 @@ col3</code></pre>
 <pre><code># A tibble: 10 × 4
    subject_id itemid charttime           valuenum
         &lt;int&gt;  &lt;int&gt; &lt;dttm&gt;                 &lt;dbl&gt;
+<<<<<<< HEAD
  1   10002528  51221 2168-12-11 12:59:00     34.4
  2   10002528  51301 2168-12-11 12:59:00      5  
  3   10002528  50882 2168-12-11 12:59:00     24  
@@ -3416,6 +3445,18 @@ col3</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>total 3670264
 -rw-r--r--@ 1 luxier  staff   1.7G Feb  9 15:39 part-0.parquet</code></pre>
+=======
+ 1   10025608  50931 2143-02-19 20:20:00     97  
+ 2   10025608  50971 2143-02-19 20:20:00      4.4
+ 3   10025608  50983 2143-02-19 20:20:00    131  
+ 4   10025608  51221 2143-02-19 20:20:00     32.9
+ 5   10025608  51301 2143-02-19 20:20:00     15.7
+ 6   10025612  50882 2125-09-24 11:55:00     25  
+ 7   10025612  50902 2125-09-24 11:55:00    101  
+ 8   10025612  50912 2125-09-24 11:55:00      1.2
+ 9   10025612  50931 2125-09-24 11:55:00    103  
+10   10025612  50971 2125-09-24 11:55:00      4.1</code></pre>
+>>>>>>> develop
 </div>
 </div>
 </section>
@@ -3445,7 +3486,11 @@ col3</code></pre>
 <span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
+<<<<<<< HEAD
   3.637   1.125   1.891 </code></pre>
+=======
+  3.698   0.728   0.640 </code></pre>
+>>>>>>> develop
 </div>
 <div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(labevents_duckdb)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3456,6 +3501,7 @@ col3</code></pre>
 <pre><code># A tibble: 10 × 4
    subject_id itemid charttime           valuenum
         &lt;int&gt;  &lt;int&gt; &lt;dttm&gt;                 &lt;dbl&gt;
+<<<<<<< HEAD
  1   10007920  51301 2135-10-19 11:15:00      5.8
  2   10007920  51221 2135-12-01 04:01:00     34.8
  3   10007920  51301 2135-12-01 04:01:00      8.7
@@ -3466,6 +3512,18 @@ col3</code></pre>
  8   10007920  50971 2135-12-01 04:01:00      3.7
  9   10007920  50983 2135-12-01 04:01:00    139  
 10   10007920  51221 2135-12-26 13:25:00     40.4</code></pre>
+=======
+ 1   10002528  51221 2168-12-11 12:59:00     34.4
+ 2   10002528  51301 2168-12-11 12:59:00      5  
+ 3   10002528  50882 2168-12-11 12:59:00     24  
+ 4   10002528  50902 2168-12-11 12:59:00    104  
+ 5   10002528  50912 2168-12-11 12:59:00      0.7
+ 6   10002528  50931 2168-12-11 12:59:00     77  
+ 7   10002528  50971 2168-12-11 12:59:00      3.8
+ 8   10002528  50983 2168-12-11 12:59:00    142  
+ 9   10002528  50882 2168-12-12 07:24:00     21  
+10   10002528  50902 2168-12-12 07:24:00    106  </code></pre>
+>>>>>>> develop
 </div>
 </div>
 </section>
