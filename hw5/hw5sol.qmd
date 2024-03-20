@@ -43,6 +43,7 @@ data_split <- initial_split(
 
 ####Answer
 ```{r}
+# eval: true
 library(GGally)
 library(gtsummary)
 library(tidyverse)
@@ -76,6 +77,7 @@ print(mimiciv_icu_cohort)
 
 #####Classification Trees
 ```{r}
+# eval: true
 mimiciv_icu_cohort1 <- mimiciv_icu_cohort
 # Data split
 data_split <- initial_split(
@@ -90,6 +92,7 @@ mimiciv_test <- testing(data_split)
 ```
 
 ```{r}
+# eval: true
 # Preprocessing
 mimic_recipe <- 
   recipe(
@@ -183,6 +186,7 @@ The image shows a table with performance metrics for a binary classification mod
 
 #####random forest
 ```{r}
+# eval: true
 # Preprocessing
 mimic_recipe <- 
   recipe(
@@ -259,6 +263,7 @@ The image displays performance metrics for a binary classification model named "
 
 #####boosting
 ```{r}
+# eval: true
 # Preprocessing
 mimic_recipe <- 
   recipe(
@@ -336,12 +341,13 @@ final_fit %>%
 
 The model described in the image appears to have been evaluated on two performance metrics: accuracy and ROC AUC (Receiver Operating Characteristic Area Under Curve). The accuracy is approximately 0.6106, indicating that the model correctly predicts the outcome about 61.06% of the time. The ROC AUC score is approximately 0.6553, suggesting that the model has a fair ability to distinguish between the classes being predicted.
 
-
+#####comparison
+the model of boosting have the best performance in terms of accuracy and ROC AUC. 
 
 
 #####Model Stacking
 ```{r}
-
+# eval: true
 mimic_model_st <- 
   stacks() |>
   add_candidates(tree_fit) |>
@@ -357,7 +363,6 @@ mimic_model_st
 
 autoplot(mimic_model_st, type = "members")
 autoplot(mimic_model_st, type = "weights")
-
 
 
 mimic_auc <- mimiciv_test %>%
@@ -386,8 +391,7 @@ roc_accuracy <- yardstick::accuracy(
 
 
 roc_auc
-roc_accuracy)
-
-
+roc_accuracy
 
 ```
+The model stacking has achieved an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of approximately 0.6600, indicating a fair capability to discriminate between the positive and negative classes. Additionally, the model has an accuracy score of about 0.6153, meaning that it correctly predicts the target variable 61.53% of the time. These metrics suggest that the model stacking approach provides reasonable predictive performance.
