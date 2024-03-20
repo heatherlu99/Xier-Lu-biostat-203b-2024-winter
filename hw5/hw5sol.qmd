@@ -50,6 +50,9 @@ library(tidymodels)
 library(dplyr)
 library(mlr3tuning)
 library(rsample)
+library(keras)
+library(ranger)
+library(stacks)
 
 mimiciv_icu_cohort <- read_rds("mimiciv_shiny/mimic_icu_cohort.rds") %>%
   arrange(subject_id, hadm_id, stay_id) %>%
@@ -113,7 +116,7 @@ classtree_mod <- decision_tree(
   ) 
 
 tree_wf <- workflow() %>%
-  add_recipe(tree_recipe) %>%
+  add_recipe(mimic_recipe) %>%
   add_model(classtree_mod)
 
 # Tune the model
@@ -175,6 +178,8 @@ final_tree %>%
   extract_fit_parsnip() %>% 
   vip()
 ```
+The image shows a table with performance metrics for a binary classification model referred to as "Preprocessor1_Model1." This model has achieved an accuracy of approximately 0.5740, which means it accurately predicts the correct class for the binary target variable about 57.40% of the time. The model also has an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of about 0.5935, which indicates its ability to distinguish between the two classes is slightly better than random chance but still indicates room for improvement. 
+
 
 #####random forest
 ```{r}
@@ -249,6 +254,8 @@ final_fit <-
 final_fit %>% 
   collect_metrics()
 ```
+The image displays performance metrics for a binary classification model named "Preprocessor1_Model1." The model achieves an accuracy of approximately 0.6052, indicating that it correctly predicts the binary outcome 60.52% of the time. Additionally, the model has an ROC AUC score of approximately 0.6482, suggesting a moderate ability to discriminate between the two classes. 
+
 
 #####boosting
 ```{r}
@@ -327,19 +334,13 @@ final_fit %>%
 ```
 
 
+The model described in the image appears to have been evaluated on two performance metrics: accuracy and ROC AUC (Receiver Operating Characteristic Area Under Curve). The accuracy is approximately 0.6106, indicating that the model correctly predicts the outcome about 61.06% of the time. The ROC AUC score is approximately 0.6553, suggesting that the model has a fair ability to distinguish between the classes being predicted.
 
 
 
 
 #####Model Stacking
 ```{r}
-library(GGally)
-library(gtsummary)
-library(keras)
-library(ranger)
-library(stacks)
-library(tidyverse)
-library(tidymodels)
 
 mimic_model_st <- 
   stacks() |>
@@ -353,33 +354,39 @@ mimic_model_st <-
   fit_members()
 
 mimic_model_st 
-autoplot(mimic_model_st type = "members")
+
+autoplot(mimic_model_st, type = "members")
 autoplot(mimic_model_st, type = "weights")
-mimic_pred <- mimiciv_test %>%
+
+
+
+mimic_auc <- mimiciv_test %>%
   bind_cols(
-    predict(mimic_model_st, new_data = mimiciv_test)
+    predict(mimic_model_st, .,, type = "prob"))%>%
+  print(width = Inf)
+
+
+roc_auc <- yardstick::roc_auc(
+  data = mimic_auc,
+  truth = los_long,
+  contains( ".pred_FALSE")
+)
+
+mimic_acc <- mimiciv_test %>%
+  bind_cols(
+    predict(mimic_model_st, new_data = mimiciv_test)%>%
+  print(width = Inf)
     )
 
-yardstick::roc_auc(mimic_pred, truth = los_long,
-  contains(".pred_No")
-  )
+roc_accuracy <- yardstick::accuracy(
+  data = mimic_acc,
+  truth = "los_long",
+  estimate = .pred_class
+)
 
-mimic_pred %>%
-  mimiciv_test %>%
-  select(los_long) %>%
-  bind_cols(
-    predict(mimic_model_st, new_data = mimiciv_test, type = "class",
-      members = TRUE)
-    ) %>%
-  print(width = Inf)
-  
-map(
-  colnames(mimic_pred),
-  ~mean(mimic_pred$los_long == pull(mimic_pred, .x))
-  ) %>%
-  set_names(colnames(mimic_pred)) %>%
-  as_tibble() %>%
-  pivot_longer(c(everything(), -los_long))
+
+roc_auc
+roc_accuracy)
 
 
 
