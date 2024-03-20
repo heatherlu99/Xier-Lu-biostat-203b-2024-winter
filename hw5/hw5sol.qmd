@@ -355,7 +355,7 @@ mimic_model_st <-
   add_candidates(gb_fit) |>
   blend_predictions(
     penalty = 10^(-6:2),
-    metrics = c("roc_auc")
+    metrics = c("roc_auc", "accuracy")
     ) |>
   fit_members()
 
@@ -394,4 +394,4 @@ roc_auc
 roc_accuracy
 
 ```
-The model stacking has achieved an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of approximately 0.6600, indicating a fair capability to discriminate between the positive and negative classes. Additionally, the model has an accuracy score of about 0.6153, meaning that it correctly predicts the target variable 61.53% of the time. These metrics suggest that the model stacking approach provides reasonable predictive performance.
+The model stacking has achieved an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of approximately 0.6602283	, indicating a fair capability to discriminate between the positive and negative classes. Additionally, the model has an accuracy score of about 0.6141128	, meaning that it correctly predicts the target variable 61.53% of the time. These metrics suggest that the model stacking approach provides reasonable predictive performance.
