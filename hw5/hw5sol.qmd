@@ -1,7 +1,7 @@
 ---
 title: "Biostat 203B Homework 5"
 subtitle: Due Mar 22 @ 11:59PM
-author: "Your Name and UID"
+author: "Xier Lu UID:206331941"
 format:
   html:
     theme: cosmo
@@ -90,7 +90,7 @@ mimiciv_other <- training(data_split)
 mimiciv_test <- testing(data_split) 
 
 ```
-
+#####classiciation tree
 ```{r}
 # eval: true
 # Preprocessing
@@ -181,7 +181,7 @@ final_tree %>%
   extract_fit_parsnip() %>% 
   vip()
 ```
-The image shows a table with performance metrics for a binary classification model referred to as "Preprocessor1_Model1." This model has achieved an accuracy of approximately 0.5740, which means it accurately predicts the correct class for the binary target variable about 57.40% of the time. The model also has an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of about 0.5935, which indicates its ability to distinguish between the two classes is slightly better than random chance but still indicates room for improvement. 
+The image shows a table with performance metrics for a binary classification model referred to as "Preprocessor1_Model1." This model has achieved an accuracy of approximately 0.57, which means it accurately predicts the correct class for the binary target variable about 57% of the time. The model also has an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of about 0.59, which indicates its ability to distinguish between the two classes is slightly better than random chance but still indicates room for improvement. 
 
 
 #####random forest
@@ -258,7 +258,7 @@ final_fit <-
 final_fit %>% 
   collect_metrics()
 ```
-The image displays performance metrics for a binary classification model named "Preprocessor1_Model1." The model achieves an accuracy of approximately 0.6052, indicating that it correctly predicts the binary outcome 60.52% of the time. Additionally, the model has an ROC AUC score of approximately 0.6482, suggesting a moderate ability to discriminate between the two classes. 
+The image displays performance metrics for a binary classification model named "Preprocessor1_Model1." The model achieves an accuracy of approximately 0.6, indicating that it correctly predicts the binary outcome 60.52% of the time. Additionally, the model has an ROC AUC score of approximately 0.64, suggesting a moderate ability to discriminate between the two classes. 
 
 
 #####boosting
@@ -339,7 +339,7 @@ final_fit %>%
 ```
 
 
-The model described in the image appears to have been evaluated on two performance metrics: accuracy and ROC AUC (Receiver Operating Characteristic Area Under Curve). The accuracy is approximately 0.6106, indicating that the model correctly predicts the outcome about 61.06% of the time. The ROC AUC score is approximately 0.6553, suggesting that the model has a fair ability to distinguish between the classes being predicted.
+The model described in the image appears to have been evaluated on two performance metrics: accuracy and ROC AUC (Receiver Operating Characteristic Area Under Curve). The accuracy is approximately 0.6, indicating that the model correctly predicts the outcome about 60% of the time. The ROC AUC score is approximately 0.65, suggesting that the model has a fair ability to distinguish between the classes being predicted.
 
 #####comparison
 the model of boosting have the best performance in terms of accuracy and ROC AUC. 
@@ -394,4 +394,4 @@ roc_auc
 roc_accuracy
 
 ```
-The model stacking has achieved an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of approximately 0.6602283	, indicating a fair capability to discriminate between the positive and negative classes. Additionally, the model has an accuracy score of about 0.6141128	, meaning that it correctly predicts the target variable 61.53% of the time. These metrics suggest that the model stacking approach provides reasonable predictive performance.
+The model stacking has achieved an ROC AUC (Receiver Operating Characteristic - Area Under Curve) of approximately around 0.65	, indicating a fair capability to discriminate between the positive and negative classes. Additionally, the model has an accuracy score of about 0.6	, meaning that it correctly predicts the target variable 61.53% of the time. These metrics suggest that the model stacking approach provides reasonable predictive performance.
