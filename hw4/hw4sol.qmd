@@ -243,12 +243,12 @@ mimic_icu_cohort
 Save the final tibble to an R data file `mimic_icu_cohort.rds` in the `mimiciv_shiny` folder.
 ```{r}
 # make a directory mimiciv_shiny
-if (!dir.exists("mimiciv_shiny")) {
-  dir.create("mimiciv_shiny")
+if (!dir.exists("mimiciv_shiny1")) {
+  dir.create("mimiciv_shiny1")
 }
 # save the final tibble
 mimic_icu_cohort |>
-  write_rds("mimiciv_shiny/mimic_icu_cohort.rds", compress = "gz")
+  write_rds("mimiciv_shiny1/mimic_icu_cohort1.rds", compress = "gz")
 ```
 Close database connection and clear workspace.
 ```{r}
