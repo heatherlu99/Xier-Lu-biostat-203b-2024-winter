@@ -1,20 +1,22 @@
 *Xier Lu*
 
-### Overall Grade: 84/300
+### Overall Grade: 184/300
 
 ### Late penalty
 
 Is the homework submitted (git tag time) before deadline? Take 10 pts off per day for late submission.
 
-### Quality of report: 20/50
+### Quality of report: 30/50
 
 **No html submitted.**
 
 Is the report clear (sectioning, whole sentences, typos, grammar)? Do readers have a clear idea what's going on and how results are produced by just reading the report? Take points off if the report is too succinct to grasp, or there are too many typos/grammar.
 
-### Reproducibility: 0/50
+### Reproducibility: 20/50
 
-### Compleeness and performance: 0/100
+**Could not reproduce qmd for final html**
+
+### Completeness and performance: 80/100
 
 Completeness (50): 3 machine learning algorithms (each with CV tuning) + model stacking. Clearly present the results with a few sentences of interpretation.
 
@@ -22,15 +24,13 @@ Performance (50): Score will be mainly determined by the distribution of the rep
 
 If the report is not reproducible at all, the score of this section will be 0.
 
-**No interpretation or comparison of models.**
+**No discussion of interpretability or comparison of performance among models. No discussion of variable importance for all models.**
 
-**No model stacking**
-
-**Could not reproduce**
-
-### Usage of Git: 40/50
+### Usage of Git: 30/50
 
 **Still: wrong repository name, no use of develop branch**
+
+**Final version was not pushed to Github**
 
 -   Are branches (`main` and `develop`) correctly set up? Is the hw submission put into the `main` branch?
 
